@@ -8,6 +8,7 @@ import {
   type Material,
   type Object3D
 } from 'three';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { resolveMaterial } from '../domain/materials';
 import type { ExportFormat, MedalConfig, ModelBuffers } from '../domain/types';
 
@@ -21,9 +22,10 @@ export function createMedalGeometry(model: ModelBuffers): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(model.positions.slice(), 3));
   geometry.setIndex(new BufferAttribute(model.indices.slice(), 1));
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-  return geometry;
+  const creased = toCreasedNormals(geometry, Math.PI / 4);
+  creased.computeBoundingSphere();
+  geometry.dispose();
+  return creased;
 }
 
 function createMaterial(config: MedalConfig): Material {

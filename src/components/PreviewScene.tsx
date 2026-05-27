@@ -1,19 +1,12 @@
 import { Bounds, ContactShadows, Environment, Grid, OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { useMemo } from 'react';
-import { BufferAttribute, BufferGeometry } from 'three';
 import { resolveMaterial } from '../domain/materials';
 import type { MedalConfig, ModelBuffers } from '../domain/types';
+import { createMedalGeometry } from '../export/exporters';
 
 function MedalMesh({ model, config }: { model: ModelBuffers; config: MedalConfig }) {
-  const geometry = useMemo(() => {
-    const next = new BufferGeometry();
-    next.setAttribute('position', new BufferAttribute(model.positions, 3));
-    next.setIndex(new BufferAttribute(model.indices, 1));
-    next.computeVertexNormals();
-    next.computeBoundingSphere();
-    return next;
-  }, [model]);
+  const geometry = useMemo(() => createMedalGeometry(model), [model]);
   const material = resolveMaterial(config);
 
   return (

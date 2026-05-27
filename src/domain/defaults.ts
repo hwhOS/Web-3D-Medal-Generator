@@ -15,8 +15,8 @@ export const defaultConfig: MedalConfig = {
   metalness: 0.95,
   roughness: 0.28,
   reliefMode: 'raised',
-  reliefDepth: 1.2,
-  reliefScale: 74,
+  reliefDepth: 0.8,
+  reliefScale: 58,
   reliefRotation: 0,
   reliefOffsetX: 0,
   reliefOffsetY: 0
