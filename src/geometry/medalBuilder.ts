@@ -1,5 +1,5 @@
 import Module, { type ManifoldToplevel } from 'manifold-3d';
-import type { MedalConfig, ModelBuffers, SvgReliefInput } from '../domain/types';
+import type { MedalConfig, ModelBuffers, SvgReliefGeometry } from '../domain/types';
 import {
   bounds2,
   cleanPolygon,
@@ -9,7 +9,6 @@ import {
   scaledPolygon,
   type Point2
 } from './polygonUtils';
-import { parseSvgToPolygons } from './svgParser';
 
 interface LayeredMesh {
   positions: number[];
@@ -144,17 +143,16 @@ function makeBase(
 }
 
 function makeReliefCrossSection(
-  svg: SvgReliefInput,
+  svg: SvgReliefGeometry,
   config: MedalConfig,
   topOutline: Point2[],
   footprint: { width: number; height: number },
   api: ManifoldApi
 ): { crossSection: CrossSectionInstance | null; warnings: string[] } {
-  const parsed = parseSvgToPolygons(svg.text, { curveSegments: Math.max(8, Math.round(config.quality / 6)) });
   const fitWidth = footprint.width * 0.82;
   const fitHeight = footprint.height * 0.82;
-  const normalized = normalizePolygonsToMedal(parsed.polygons, config, fitWidth, fitHeight);
-  const warnings = [...parsed.warnings];
+  const normalized = normalizePolygonsToMedal(svg.polygons, config, fitWidth, fitHeight);
+  const warnings = [...svg.warnings];
 
   if (normalized.length === 0) {
     return { crossSection: null, warnings };
@@ -214,14 +212,14 @@ function meshToBuffers(manifold: ManifoldInstance, warnings: string[]): ModelBuf
   };
 }
 
-export async function buildMedalModel(config: MedalConfig, svg: SvgReliefInput | null, wasmUrl?: string): Promise<ModelBuffers> {
+export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometry | null, wasmUrl?: string): Promise<ModelBuffers> {
   const api = await getManifoldApi(wasmUrl);
   const warnings: string[] = [];
   const { solid: baseSolid, topOutline, footprint } = makeBase(config, api);
   let result: ManifoldInstance = baseSolid;
 
   try {
-    if (svg?.text) {
+    if (svg?.polygons.length) {
       const { crossSection, warnings: svgWarnings } = makeReliefCrossSection(svg, config, topOutline, footprint, api);
       warnings.push(...svgWarnings);
 

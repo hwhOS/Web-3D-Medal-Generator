@@ -33,6 +33,12 @@ export interface SvgReliefInput {
   fileName: string;
 }
 
+export interface SvgReliefGeometry {
+  fileName: string;
+  polygons: Array<Array<[number, number]>>;
+  warnings: string[];
+}
+
 export interface ModelBuffers {
   positions: Float32Array;
   indices: Uint32Array;
@@ -51,7 +57,7 @@ export interface ModelBuffers {
 export interface WorkerBuildRequest {
   id: number;
   config: MedalConfig;
-  svg: SvgReliefInput | null;
+  svg: SvgReliefGeometry | null;
 }
 
 export type WorkerBuildResponse =

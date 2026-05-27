@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BuildStatus, MedalConfig, ModelBuffers, SvgReliefInput, WorkerBuildResponse } from '../domain/types';
+import type {
+  BuildStatus,
+  MedalConfig,
+  ModelBuffers,
+  SvgReliefGeometry,
+  SvgReliefInput,
+  WorkerBuildResponse
+} from '../domain/types';
+import { parseSvgToPolygons } from '../geometry/svgParser';
 
 export interface MedalModelState {
   status: BuildStatus;
@@ -36,6 +44,28 @@ export function useMedalModel(config: MedalConfig, svg: SvgReliefInput | null): 
 
     const id = requestId.current + 1;
     requestId.current = id;
+
+    let parsedSvg: SvgReliefGeometry | null = null;
+    if (svg) {
+      try {
+        const parsed = parseSvgToPolygons(svg.text, {
+          curveSegments: Math.max(8, Math.round(config.quality / 6))
+        });
+        parsedSvg = {
+          fileName: svg.fileName,
+          polygons: parsed.polygons,
+          warnings: parsed.warnings
+        };
+      } catch (error) {
+        setState({
+          status: 'error',
+          model: null,
+          error: error instanceof Error ? `SVG 解析失败：${error.message}` : 'SVG 解析失败。'
+        });
+        return;
+      }
+    }
+
     setState((current) => ({
       status: 'generating',
       model: current.model,
@@ -43,7 +73,7 @@ export function useMedalModel(config: MedalConfig, svg: SvgReliefInput | null): 
     }));
 
     const timeout = window.setTimeout(() => {
-      worker.postMessage({ id, config, svg });
+      worker.postMessage({ id, config, svg: parsedSvg });
     }, 180);
 
     const watchdog = window.setTimeout(() => {

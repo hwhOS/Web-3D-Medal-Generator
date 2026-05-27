@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { defaultConfig } from '../domain/defaults';
 import { buildMedalModel } from './medalBuilder';
+import { parseSvgToPolygons } from './svgParser';
 
 const svg = {
   fileName: 'mark.svg',
-  text: '<svg viewBox="0 0 100 100"><path fill="#000" d="M25 25H75V75H25Z"/></svg>'
+  ...parseSvgToPolygons('<svg viewBox="0 0 100 100"><path fill="#000" d="M25 25H75V75H25Z"/></svg>', {
+    curveSegments: 8
+  })
 };
 
 describe('buildMedalModel', () => {
