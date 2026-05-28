@@ -1,8 +1,20 @@
 export type MedalShape = 'circle' | 'oval' | 'rounded-rect' | 'polygon' | 'shield';
 
-export type MaterialPreset = 'gold' | 'silver' | 'bronze' | 'black-nickel' | 'custom';
+export type MaterialPreset =
+  | 'gold'
+  | 'silver'
+  | 'white-gold'
+  | 'rose-gold'
+  | 'bronze'
+  | 'brass'
+  | 'platinum'
+  | 'titanium'
+  | 'black-nickel'
+  | 'custom';
 
 export type ExportFormat = 'stl' | 'glb' | 'usdz';
+
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 export interface MedalConfig {
   shape: MedalShape;

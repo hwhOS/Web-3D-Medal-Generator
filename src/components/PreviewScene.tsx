@@ -1,9 +1,48 @@
 import { Bounds, ContactShadows, Environment, Grid, OrbitControls } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { useMemo } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, useState, type ElementRef } from 'react';
+import { Vector3 } from 'three';
 import { resolveMaterial } from '../domain/materials';
-import type { MedalConfig, ModelBuffers } from '../domain/types';
+import type { MedalConfig, ModelBuffers, ThemeMode } from '../domain/types';
 import { createMedalGeometry, hasBackMarkGeometry, hasReliefGeometry } from '../export/exporters';
+
+export type PreviewView = 'iso' | 'front' | 'back' | 'right' | 'top';
+
+const viewVectors: Record<PreviewView, [number, number, number]> = {
+  iso: [0.55, -0.8, 0.62],
+  front: [0, -0.04, 1],
+  back: [0, 0.04, -1],
+  right: [1, 0, 0.08],
+  top: [0, 1, 0.08]
+};
+
+const upVectors: Record<PreviewView, [number, number, number]> = {
+  iso: [0, 1, 0],
+  front: [0, 1, 0],
+  back: [0, 1, 0],
+  right: [0, 0, 1],
+  top: [0, 0, 1]
+};
+
+function useEffectiveTheme(themeMode: ThemeMode): 'light' | 'dark' {
+  const [systemDark, setSystemDark] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const query = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => setSystemDark(query.matches);
+    handleChange();
+    query.addEventListener('change', handleChange);
+    return () => query.removeEventListener('change', handleChange);
+  }, []);
+
+  return themeMode === 'system' ? (systemDark ? 'dark' : 'light') : themeMode;
+}
 
 function MedalMesh({ model, config }: { model: ModelBuffers; config: MedalConfig }) {
   const baseGeometry = useMemo(() => createMedalGeometry(model, 'base'), [model]);
@@ -30,14 +69,83 @@ function MedalMesh({ model, config }: { model: ModelBuffers; config: MedalConfig
   );
 }
 
-export function PreviewScene({ model, config }: { model: ModelBuffers | null; config: MedalConfig }) {
+function SceneCamera({ model, view }: { model: ModelBuffers | null; view: PreviewView }) {
+  const { camera } = useThree();
+  const controlsRef = useRef<ElementRef<typeof OrbitControls>>(null);
+
+  useEffect(() => {
+    if (!model) {
+      return undefined;
+    }
+
+    const applyView = () => {
+      const center = new Vector3(
+        (model.bounds.min[0] + model.bounds.max[0]) / 2,
+        (model.bounds.min[1] + model.bounds.max[1]) / 2,
+        (model.bounds.min[2] + model.bounds.max[2]) / 2
+      );
+      const maxDimension = Math.max(
+        model.bounds.max[0] - model.bounds.min[0],
+        model.bounds.max[1] - model.bounds.min[1],
+        model.bounds.max[2] - model.bounds.min[2]
+      );
+      const distance = Math.max(72, maxDimension * 1.72);
+      const direction = new Vector3(...viewVectors[view]).normalize();
+
+      camera.position.copy(center).addScaledVector(direction, distance);
+      camera.up.fromArray(upVectors[view]);
+      camera.near = Math.max(0.1, distance / 500);
+      camera.far = distance * 8;
+      camera.lookAt(center);
+      camera.updateProjectionMatrix();
+
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(center);
+        controlsRef.current.update();
+      }
+    };
+
+    const frame = window.requestAnimationFrame(applyView);
+    return () => window.cancelAnimationFrame(frame);
+  }, [camera, model, view]);
+
+  return <OrbitControls ref={controlsRef} makeDefault enableDamping minDistance={38} maxDistance={220} />;
+}
+
+export function PreviewScene({
+  model,
+  config,
+  view,
+  themeMode
+}: {
+  model: ModelBuffers | null;
+  config: MedalConfig;
+  view: PreviewView;
+  themeMode: ThemeMode;
+}) {
+  const effectiveTheme = useEffectiveTheme(themeMode);
+  const colors =
+    effectiveTheme === 'dark'
+      ? {
+          background: '#111113',
+          gridCell: '#2b2b30',
+          gridSection: '#515158',
+          shadowOpacity: 0.36
+        }
+      : {
+          background: '#f5f5f7',
+          gridCell: '#d7d7dc',
+          gridSection: '#a7a7af',
+          shadowOpacity: 0.22
+        };
+
   return (
     <div className="preview-shell">
       <Canvas camera={{ position: [0, -105, 72], fov: 42 }} shadows gl={{ antialias: true }}>
-        <color attach="background" args={['#f6f4ef']} />
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[32, -44, 70]} intensity={2.2} castShadow />
-        <directionalLight position={[-55, 32, 35]} intensity={0.8} />
+        <color attach="background" args={[colors.background]} />
+        <ambientLight intensity={effectiveTheme === 'dark' ? 0.95 : 0.8} />
+        <directionalLight position={[32, -44, 70]} intensity={effectiveTheme === 'dark' ? 2.5 : 2.2} castShadow />
+        <directionalLight position={[-55, 32, 35]} intensity={effectiveTheme === 'dark' ? 1 : 0.8} />
         <Environment preset="city" />
         <Grid
           position={[0, 0, -8]}
@@ -48,16 +156,16 @@ export function PreviewScene({ model, config }: { model: ModelBuffers | null; co
           sectionThickness={1}
           fadeDistance={150}
           fadeStrength={1.5}
-          cellColor="#d6d2c7"
-          sectionColor="#9b9488"
+          cellColor={colors.gridCell}
+          sectionColor={colors.gridSection}
         />
         {model && (
           <Bounds fit clip observe margin={1.25}>
             <MedalMesh model={model} config={config} />
           </Bounds>
         )}
-        <ContactShadows opacity={0.28} scale={120} blur={2.5} far={30} position={[0, 0, -8]} />
-        <OrbitControls makeDefault enableDamping minDistance={38} maxDistance={220} />
+        <ContactShadows opacity={colors.shadowOpacity} scale={120} blur={2.5} far={30} position={[0, 0, -8]} />
+        <SceneCamera model={model} view={view} />
       </Canvas>
     </div>
   );

@@ -8,8 +8,10 @@ describe('defaultConfig', () => {
     expect(defaultConfig.diameter).toBeGreaterThan(defaultConfig.thickness);
     expect(defaultConfig.reliefDepth).toBe(0.1);
     expect(defaultConfig.backMarkDepth).toBe(0.1);
+    expect(defaultConfig.edgeBevel).toBe(0.6);
     expect(defaultConfig.quality).toBeGreaterThanOrEqual(144);
     expect(defaultConfig.reliefMetalness).toBeGreaterThan(0.8);
+    expect(defaultConfig.backMarkMetalness).toBe(1);
     expect(defaultConfig.materialPreset).toBe('silver');
     expect(defaultConfig.reliefColor).toBe('#c8ccd0');
     expect(defaultConfig.reliefRoughness).toBe(0);

@@ -3,19 +3,22 @@ import {
   Circle,
   FileUp,
   Hexagon,
+  Monitor,
+  Moon,
   Palette,
   Pentagon,
   RotateCcw,
   Shield,
   SlidersHorizontal,
   SquareRoundCorner,
+  Sun,
   Type
 } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 import { createDefaultBackText } from '../domain/defaults';
 import { materialPresets } from '../domain/materials';
 import { findSvgSampleId, getSvgSampleInput, svgSamples, type SvgSampleId } from '../domain/svgSamples';
-import type { MaterialPreset, MedalShape } from '../domain/types';
+import type { MaterialPreset, MedalShape, ThemeMode } from '../domain/types';
 import { copy } from '../i18n';
 import { useMedalStore } from '../store/useMedalStore';
 
@@ -25,6 +28,12 @@ const shapeOptions: Array<{ value: MedalShape; icon: typeof Circle }> = [
   { value: 'rounded-rect', icon: SquareRoundCorner },
   { value: 'polygon', icon: Hexagon },
   { value: 'shield', icon: Shield }
+];
+
+const themeOptions: Array<{ value: ThemeMode; icon: typeof Monitor }> = [
+  { value: 'system', icon: Monitor },
+  { value: 'light', icon: Sun },
+  { value: 'dark', icon: Moon }
 ];
 
 function NumberField({
@@ -66,7 +75,8 @@ function NumberField({
 }
 
 export function ControlPanel() {
-  const { config, svg, backSvg, language, setConfig, setMaterialPreset, setLanguage, setSvg, setBackSvg, reset } = useMedalStore();
+  const { config, svg, backSvg, language, themeMode, setConfig, setMaterialPreset, setLanguage, setThemeMode, setSvg, setBackSvg, reset } =
+    useMedalStore();
   const t = copy[language];
   const frontSampleId = findSvgSampleId(svg);
   const backSampleId = findSvgSampleId(backSvg);
@@ -126,14 +136,6 @@ export function ControlPanel() {
           <h1>{t.appTitle}</h1>
           <p>{t.appSubtitle}</p>
         </div>
-      </div>
-      <div className="language-toggle" role="group" aria-label={t.language}>
-        <button className={language === 'en' ? 'is-selected' : ''} type="button" onClick={() => setLanguage('en')}>
-          EN
-        </button>
-        <button className={language === 'zh' ? 'is-selected' : ''} type="button" onClick={() => setLanguage('zh')}>
-          中文
-        </button>
       </div>
 
       <section className="control-section">
@@ -340,6 +342,42 @@ export function ControlPanel() {
         <RotateCcw size={16} />
         {t.reset}
       </button>
+
+      <section className="control-section preferences-section">
+        <div className="section-title">
+          <Monitor size={16} />
+          <h2>{t.sections.display}</h2>
+        </div>
+        <div className="preference-group">
+          <span>{t.theme}</span>
+          <div className="mode-toggle" role="group" aria-label={t.theme}>
+            {themeOptions.map(({ value, icon: Icon }) => (
+              <button
+                key={value}
+                className={themeMode === value ? 'is-selected' : ''}
+                type="button"
+                onClick={() => setThemeMode(value)}
+                title={t.themes[value]}
+                aria-pressed={themeMode === value}
+              >
+                <Icon size={15} />
+                <span>{t.themes[value]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="preference-group">
+          <span>{t.language}</span>
+          <div className="language-toggle" role="group" aria-label={t.language}>
+            <button className={language === 'en' ? 'is-selected' : ''} type="button" onClick={() => setLanguage('en')}>
+              EN
+            </button>
+            <button className={language === 'zh' ? 'is-selected' : ''} type="button" onClick={() => setLanguage('zh')}>
+              中文
+            </button>
+          </div>
+        </div>
+      </section>
     </aside>
   );
 }

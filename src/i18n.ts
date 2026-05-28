@@ -1,14 +1,15 @@
-import type { ExportFormat, MaterialPreset, MedalShape } from './domain/types';
+import type { ExportFormat, MaterialPreset, MedalShape, ThemeMode } from './domain/types';
 
 export type Language = 'en' | 'zh';
 
 type Copy = {
   documentTitle: string;
   language: string;
+  theme: string;
   controlAria: string;
   appTitle: string;
   appSubtitle: string;
-  sections: Record<'shape' | 'dimensions' | 'svg' | 'back' | 'material', string>;
+  sections: Record<'shape' | 'dimensions' | 'svg' | 'back' | 'material' | 'display', string>;
   shapes: Record<MedalShape, string>;
   fields: Record<
     | 'diameter'
@@ -46,8 +47,10 @@ type Copy = {
   >;
   upload: Record<'frontAria' | 'backAria' | 'noFront' | 'noBack' | 'removeSvg' | 'removeBackSvg' | 'noSample' | 'uploadedSample', string>;
   materials: Record<MaterialPreset, string>;
+  themes: Record<ThemeMode, string>;
   reset: string;
   preview: Record<'eyebrow' | 'title' | 'hint', string>;
+  views: Record<'iso' | 'front' | 'back' | 'right' | 'top', string>;
   exportPanel: {
     aria: string;
     status: Record<'idle' | 'generating' | 'ready' | 'error', string>;
@@ -62,6 +65,7 @@ export const copy: Record<Language, Copy> = {
   en: {
     documentTitle: 'Medal Generator',
     language: 'Language',
+    theme: 'Appearance',
     controlAria: 'Medal parameters',
     appTitle: 'Medal Generator',
     appSubtitle: 'SVG relief to 3D medal model',
@@ -70,7 +74,8 @@ export const copy: Record<Language, Copy> = {
       dimensions: 'Dimensions',
       svg: 'SVG Relief',
       back: 'Back Text',
-      material: 'Base Material'
+      material: 'Base Material',
+      display: 'Display'
     },
     shapes: {
       circle: 'Circle',
@@ -125,15 +130,32 @@ export const copy: Record<Language, Copy> = {
     materials: {
       gold: 'Gold',
       silver: 'Silver',
+      'white-gold': 'White Gold',
+      'rose-gold': 'Rose Gold',
       bronze: 'Bronze',
+      brass: 'Brass',
+      platinum: 'Platinum',
+      titanium: 'Titanium',
       'black-nickel': 'Black Nickel',
       custom: 'Custom'
+    },
+    themes: {
+      system: 'System',
+      light: 'Light',
+      dark: 'Dark'
     },
     reset: 'Reset Parameters',
     preview: {
       eyebrow: 'Live Preview',
       title: '3D Medal Model',
       hint: 'Drag to rotate · Scroll to zoom'
+    },
+    views: {
+      iso: 'Iso',
+      front: 'Front',
+      back: 'Back',
+      right: 'Right',
+      top: 'Top'
     },
     exportPanel: {
       aria: 'Export model',
@@ -161,6 +183,7 @@ export const copy: Record<Language, Copy> = {
   zh: {
     documentTitle: '奖牌生成器',
     language: '界面语言',
+    theme: '外观',
     controlAria: '奖牌参数',
     appTitle: '奖牌生成器',
     appSubtitle: 'SVG 浮雕到 3D 奖牌模型',
@@ -169,7 +192,8 @@ export const copy: Record<Language, Copy> = {
       dimensions: '尺寸',
       svg: 'SVG 纹理',
       back: '背面刻字',
-      material: '材质'
+      material: '材质',
+      display: '显示'
     },
     shapes: {
       circle: '圆形',
@@ -224,15 +248,32 @@ export const copy: Record<Language, Copy> = {
     materials: {
       gold: '金色',
       silver: '银色',
+      'white-gold': '白金',
+      'rose-gold': '玫瑰金',
       bronze: '铜色',
+      brass: '黄铜',
+      platinum: '铂金',
+      titanium: '钛金属',
       'black-nickel': '黑镍',
       custom: '自定义'
+    },
+    themes: {
+      system: '跟随系统',
+      light: '浅色',
+      dark: '深色'
     },
     reset: '重置参数',
     preview: {
       eyebrow: '实时预览',
       title: '3D 奖牌模型',
       hint: '拖拽旋转 · 滚轮缩放'
+    },
+    views: {
+      iso: '等角',
+      front: '正面',
+      back: '背面',
+      right: '右侧',
+      top: '顶部'
     },
     exportPanel: {
       aria: '导出模型',

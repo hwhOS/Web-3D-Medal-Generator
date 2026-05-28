@@ -20,7 +20,7 @@ export function createDefaultConfig(date = new Date()): MedalConfig {
     width: 72,
     height: 72,
     thickness: 5,
-    edgeBevel: 1,
+    edgeBevel: 0.6,
     cornerRadius: 8,
     polygonSides: 6,
     quality: 144,
@@ -44,7 +44,7 @@ export function createDefaultConfig(date = new Date()): MedalConfig {
     backLogoWidth: 8,
     backLogoOffsetY: -7,
     backMarkColor: '#ffffff',
-    backMarkMetalness: 0.08,
+    backMarkMetalness: 1,
     backMarkRoughness: 0
   };
 }

@@ -9,6 +9,7 @@ describe('ControlPanel', () => {
     act(() => {
       useMedalStore.getState().reset();
       useMedalStore.getState().setLanguage('en');
+      useMedalStore.getState().setThemeMode('system');
     });
   });
 
@@ -21,6 +22,8 @@ describe('ControlPanel', () => {
     expect(screen.getByText('Back Sample')).toBeInTheDocument();
     expect(screen.getByText('Relief Color')).toBeInTheDocument();
     expect(screen.getByText('Text Roughness')).toBeInTheDocument();
+    expect(screen.getByText('Appearance')).toBeInTheDocument();
+    expect(screen.getByText('Platinum')).toBeInTheDocument();
     const thickness = screen.getByLabelText(/Thickness/i);
     fireEvent.change(thickness, { target: { value: '8' } });
 
@@ -44,6 +47,14 @@ describe('ControlPanel', () => {
 
     expect(screen.getByText('奖牌生成器')).toBeInTheDocument();
     expect(screen.getByText('浮雕颜色')).toBeInTheDocument();
+  });
+
+  it('can switch appearance mode', () => {
+    render(<ControlPanel />);
+
+    fireEvent.click(screen.getByText('Dark'));
+
+    expect(useMedalStore.getState().themeMode).toBe('dark');
   });
 
   it('can reset state', () => {

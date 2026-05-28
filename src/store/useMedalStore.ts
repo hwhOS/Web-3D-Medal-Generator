@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createDefaultConfig } from '../domain/defaults';
 import { materialPresets } from '../domain/materials';
 import { randomSvgSampleInput } from '../domain/svgSamples';
-import type { MaterialPreset, MedalConfig, SvgReliefInput } from '../domain/types';
+import type { MaterialPreset, MedalConfig, SvgReliefInput, ThemeMode } from '../domain/types';
 import type { Language } from '../i18n';
 
 interface MedalState {
@@ -10,9 +10,11 @@ interface MedalState {
   svg: SvgReliefInput | null;
   backSvg: SvgReliefInput | null;
   language: Language;
+  themeMode: ThemeMode;
   setConfig: (patch: Partial<MedalConfig>) => void;
   setMaterialPreset: (preset: MaterialPreset) => void;
   setLanguage: (language: Language) => void;
+  setThemeMode: (themeMode: ThemeMode) => void;
   setSvg: (svg: SvgReliefInput | null) => void;
   setBackSvg: (svg: SvgReliefInput | null) => void;
   reset: () => void;
@@ -23,6 +25,7 @@ export const useMedalStore = create<MedalState>((set) => ({
   svg: randomSvgSampleInput(),
   backSvg: randomSvgSampleInput(),
   language: 'en',
+  themeMode: 'system',
   setConfig: (patch) =>
     set((state) => ({
       config: {
@@ -52,6 +55,7 @@ export const useMedalStore = create<MedalState>((set) => ({
       };
     }),
   setLanguage: (language) => set({ language }),
+  setThemeMode: (themeMode) => set({ themeMode }),
   setSvg: (svg) => set({ svg }),
   setBackSvg: (backSvg) => set({ backSvg }),
   reset: () =>
