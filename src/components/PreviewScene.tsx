@@ -1,4 +1,4 @@
-import { Bounds, ContactShadows, Environment, Grid, OrbitControls } from '@react-three/drei';
+import { ContactShadows, Environment, Grid, OrbitControls } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState, type ElementRef } from 'react';
 import { Vector3 } from 'three';
@@ -10,10 +10,10 @@ export type PreviewView = 'iso' | 'front' | 'back' | 'right' | 'top';
 
 const viewVectors: Record<PreviewView, [number, number, number]> = {
   iso: [0.55, -0.8, 0.62],
-  front: [0, -0.04, 1],
-  back: [0, 0.04, -1],
-  right: [1, 0, 0.08],
-  top: [0, 1, 0.08]
+  front: [0, -0.03, 1],
+  back: [0, 0.03, -1],
+  right: [1, -0.03, 0.03],
+  top: [0, 1, 0.03]
 };
 
 const upVectors: Record<PreviewView, [number, number, number]> = {
@@ -70,7 +70,7 @@ function MedalMesh({ model, config }: { model: ModelBuffers; config: MedalConfig
 }
 
 function SceneCamera({ model, view }: { model: ModelBuffers | null; view: PreviewView }) {
-  const { camera } = useThree();
+  const { camera, invalidate, size } = useThree();
   const controlsRef = useRef<ElementRef<typeof OrbitControls>>(null);
 
   useEffect(() => {
@@ -89,7 +89,9 @@ function SceneCamera({ model, view }: { model: ModelBuffers | null; view: Previe
         model.bounds.max[1] - model.bounds.min[1],
         model.bounds.max[2] - model.bounds.min[2]
       );
-      const distance = Math.max(72, maxDimension * 1.72);
+      const fov = 'fov' in camera ? (camera.fov * Math.PI) / 180 : Math.PI / 4;
+      const aspectFit = Math.max(1, size.height / Math.max(size.width, 1));
+      const distance = Math.max(88, (maxDimension * 0.72 * aspectFit) / Math.tan(fov / 2));
       const direction = new Vector3(...viewVectors[view]).normalize();
 
       camera.position.copy(center).addScaledVector(direction, distance);
@@ -101,13 +103,18 @@ function SceneCamera({ model, view }: { model: ModelBuffers | null; view: Previe
 
       if (controlsRef.current) {
         controlsRef.current.target.copy(center);
+        controlsRef.current.object.position.copy(camera.position);
+        controlsRef.current.object.up.copy(camera.up);
+        controlsRef.current.enableDamping = false;
         controlsRef.current.update();
+        controlsRef.current.enableDamping = true;
       }
+      invalidate();
     };
 
     const frame = window.requestAnimationFrame(applyView);
     return () => window.cancelAnimationFrame(frame);
-  }, [camera, model, view]);
+  }, [camera, invalidate, model, size.height, size.width, view]);
 
   return <OrbitControls ref={controlsRef} makeDefault enableDamping minDistance={38} maxDistance={220} />;
 }
@@ -159,11 +166,7 @@ export function PreviewScene({
           cellColor={colors.gridCell}
           sectionColor={colors.gridSection}
         />
-        {model && (
-          <Bounds fit clip observe margin={1.25}>
-            <MedalMesh model={model} config={config} />
-          </Bounds>
-        )}
+        {model && <MedalMesh model={model} config={config} />}
         <ContactShadows opacity={colors.shadowOpacity} scale={120} blur={2.5} far={30} position={[0, 0, -8]} />
         <SceneCamera model={model} view={view} />
       </Canvas>
