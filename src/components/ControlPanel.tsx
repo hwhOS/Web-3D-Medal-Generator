@@ -160,11 +160,11 @@ export function ControlPanel() {
           <FileUp size={16} />
           <h2>SVG 纹理</h2>
         </div>
-        <label className="upload-box">
+        <button className="upload-box" type="button" onClick={() => document.getElementById('front-svg-upload')?.click()}>
           <FileUp size={18} />
           <span>{svg ? svg.fileName : '上传 SVG 图像'}</span>
-          <input type="file" accept=".svg,image/svg+xml" onChange={handleSvgUpload} />
-        </label>
+        </button>
+        <input id="front-svg-upload" className="file-input" type="file" accept=".svg,image/svg+xml" onChange={handleSvgUpload} />
         {svg && (
           <button className="text-button" type="button" onClick={() => setSvg(null)}>
             移除 SVG
@@ -219,16 +219,20 @@ export function ControlPanel() {
           />
           <span>显示背面小 SVG</span>
         </label>
-        <label className="upload-box">
+        <button className="upload-box" type="button" onClick={() => document.getElementById('back-svg-upload')?.click()}>
           <FileUp size={18} />
           <span>{backSvg ? backSvg.fileName : '上传背面 SVG'}</span>
-          <input type="file" accept=".svg,image/svg+xml" onChange={handleBackSvgUpload} />
-        </label>
+        </button>
+        <input id="back-svg-upload" className="file-input" type="file" accept=".svg,image/svg+xml" onChange={handleBackSvgUpload} />
         {backSvg && (
           <button className="text-button" type="button" onClick={() => setBackSvg(null)}>
             移除背面 SVG
           </button>
         )}
+        <label className="color-row">
+          <span>刻字颜色</span>
+          <input type="color" value={config.backMarkColor} onChange={(event) => setConfig({ backMarkColor: event.currentTarget.value })} />
+        </label>
         <NumberField label="SVG 宽度" value={config.backLogoWidth} min={3} max={24} step={0.5} unit="mm" onChange={(backLogoWidth) => setConfig({ backLogoWidth })} />
         <NumberField label="SVG 垂直位置" value={config.backLogoOffsetY} min={-28} max={16} unit="mm" onChange={(backLogoOffsetY) => setConfig({ backLogoOffsetY })} />
       </section>

@@ -531,7 +531,8 @@ function appendMeshToModel(model: ModelBuffers, mesh: LayeredMesh): ModelBuffers
       ]
     },
     warnings: model.warnings,
-    generatedAt: Date.now()
+    generatedAt: Date.now(),
+    markIndexStart: model.markIndexStart ?? model.indices.length
   };
 }
 
@@ -554,7 +555,7 @@ function normalizeBackSvgPolygons(svg: SvgReliefGeometry, config: MedalConfig): 
   return svg.polygons
     .map((polygon) =>
       cleanPolygon(
-        polygon.map(([x, y]) => [(x - centerX) * scale, (y - centerY) * scale + config.backLogoOffsetY])
+        polygon.map(([x, y]) => [-(x - centerX) * scale, (y - centerY) * scale + config.backLogoOffsetY])
       )
     )
     .filter((polygon) => polygon.length >= 3);
@@ -687,7 +688,7 @@ function makeBackTextMesh(config: MedalConfig, profile: BaseProfile): LayeredMes
     const lineY = config.backTextOffsetY + totalHeight / 2 - size * fitScale - lineIndex * lineGap * fitScale;
 
     appendTransformedGeometry(mesh, geometry, (point) => [
-      (point.x - minX - width / 2) * fitScale,
+      -(point.x - minX - width / 2) * fitScale,
       (point.y - minY) * fitScale + lineY,
       backZ + contactInset - point.z
     ]);

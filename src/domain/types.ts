@@ -33,6 +33,7 @@ export interface MedalConfig {
   backLogoEnabled: boolean;
   backLogoWidth: number;
   backLogoOffsetY: number;
+  backMarkColor: string;
 }
 
 export interface SvgReliefInput {
@@ -59,6 +60,7 @@ export interface ModelBuffers {
   };
   warnings: string[];
   generatedAt: number;
+  markIndexStart?: number;
 }
 
 export interface WorkerBuildRequest {

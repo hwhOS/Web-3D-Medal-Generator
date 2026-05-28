@@ -3,16 +3,24 @@ import { Canvas } from '@react-three/fiber';
 import { useMemo } from 'react';
 import { resolveMaterial } from '../domain/materials';
 import type { MedalConfig, ModelBuffers } from '../domain/types';
-import { createMedalGeometry } from '../export/exporters';
+import { createMedalGeometry, hasBackMarkGeometry } from '../export/exporters';
 
 function MedalMesh({ model, config }: { model: ModelBuffers; config: MedalConfig }) {
-  const geometry = useMemo(() => createMedalGeometry(model), [model]);
+  const baseGeometry = useMemo(() => createMedalGeometry(model, 'base'), [model]);
+  const markGeometry = useMemo(() => (hasBackMarkGeometry(model) ? createMedalGeometry(model, 'mark') : null), [model]);
   const material = resolveMaterial(config);
 
   return (
-    <mesh geometry={geometry} castShadow receiveShadow>
-      <meshStandardMaterial color={material.color} metalness={material.metalness} roughness={material.roughness} />
-    </mesh>
+    <group>
+      <mesh geometry={baseGeometry} castShadow receiveShadow>
+        <meshStandardMaterial color={material.color} metalness={material.metalness} roughness={material.roughness} />
+      </mesh>
+      {markGeometry && (
+        <mesh geometry={markGeometry} castShadow receiveShadow>
+          <meshStandardMaterial color={config.backMarkColor} metalness={0.08} roughness={0.38} />
+        </mesh>
+      )}
+    </group>
   );
 }
 

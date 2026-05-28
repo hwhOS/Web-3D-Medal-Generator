@@ -18,10 +18,17 @@ export const exportLabels: Record<ExportFormat, string> = {
   usdz: 'USDZ'
 };
 
-export function createMedalGeometry(model: ModelBuffers): BufferGeometry {
+export function hasBackMarkGeometry(model: ModelBuffers): boolean {
+  return typeof model.markIndexStart === 'number' && model.markIndexStart < model.indices.length;
+}
+
+export function createMedalGeometry(model: ModelBuffers, section: 'all' | 'base' | 'mark' = 'all'): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(model.positions.slice(), 3));
-  geometry.setIndex(new BufferAttribute(model.indices.slice(), 1));
+  const markStart = model.markIndexStart ?? model.indices.length;
+  const start = section === 'mark' ? markStart : 0;
+  const end = section === 'base' ? markStart : model.indices.length;
+  geometry.setIndex(new BufferAttribute(model.indices.slice(start, end), 1));
   const creased = toCreasedNormals(geometry, Math.PI / 9);
   creased.computeBoundingSphere();
   geometry.dispose();
@@ -37,14 +44,30 @@ function createMaterial(config: MedalConfig): Material {
   });
 }
 
-function createExportObject(model: ModelBuffers, config: MedalConfig, unitScale: number): Object3D {
-  const mesh = new Mesh(createMedalGeometry(model), createMaterial(config));
-  mesh.name = 'custom-medal';
-  mesh.scale.setScalar(unitScale);
+function createBackMarkMaterial(config: MedalConfig): Material {
+  return new MeshStandardMaterial({
+    color: new Color(config.backMarkColor),
+    metalness: 0.08,
+    roughness: 0.38
+  });
+}
 
+function createExportObject(model: ModelBuffers, config: MedalConfig, unitScale: number): Object3D {
   const scene = new Scene();
   scene.name = 'medal-export';
-  scene.add(mesh);
+
+  const medalMesh = new Mesh(createMedalGeometry(model, 'base'), createMaterial(config));
+  medalMesh.name = 'custom-medal';
+  medalMesh.scale.setScalar(unitScale);
+  scene.add(medalMesh);
+
+  if (hasBackMarkGeometry(model)) {
+    const markMesh = new Mesh(createMedalGeometry(model, 'mark'), createBackMarkMaterial(config));
+    markMesh.name = 'back-markings';
+    markMesh.scale.setScalar(unitScale);
+    scene.add(markMesh);
+  }
+
   return scene;
 }
 

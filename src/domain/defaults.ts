@@ -26,5 +26,6 @@ export const defaultConfig: MedalConfig = {
   backTextOffsetY: 5,
   backLogoEnabled: true,
   backLogoWidth: 8,
-  backLogoOffsetY: -7
+  backLogoOffsetY: -7,
+  backMarkColor: '#ffffff'
 };
