@@ -188,6 +188,49 @@ function makeReliefCrossSection(
   return { crossSection: clipped, warnings };
 }
 
+function makeRaisedRelief(
+  crossSection: CrossSectionInstance,
+  config: MedalConfig,
+  api: ManifoldApi
+): ManifoldInstance {
+  const reliefDepth = Math.max(0.1, config.reliefDepth);
+  const overlap = 0.08;
+  const shoulderDepth = Math.min(0.22, reliefDepth * 0.42);
+  const upperDepth = Math.max(0.08, reliefDepth - shoulderDepth);
+  const insetAmount = Math.min(0.32, reliefDepth * 0.55);
+  const baseTop = config.thickness / 2;
+
+  const lower = crossSection
+    .extrude(shoulderDepth + overlap, 0, 0, 1, true)
+    .translate([0, 0, baseTop + shoulderDepth / 2 - overlap / 2]);
+
+  const inset = crossSection.offset(-insetAmount, 'Round', 2, Math.max(12, Math.round(config.quality / 6))).simplify(0.02);
+  if (inset.isEmpty()) {
+    inset.delete();
+    return lower;
+  }
+
+  const upper = inset
+    .extrude(upperDepth + overlap, 0, 0, 1, true)
+    .translate([0, 0, baseTop + shoulderDepth + upperDepth / 2 - overlap / 2]);
+  const raised = api.Manifold.union([lower, upper]);
+
+  lower.delete();
+  upper.delete();
+  inset.delete();
+
+  return raised;
+}
+
+function makeEngravingCutter(crossSection: CrossSectionInstance, config: MedalConfig): ManifoldInstance {
+  const overlap = 0.08;
+  const reliefDepth = Math.max(0.1, config.reliefDepth);
+  const cutterHeight = reliefDepth + overlap * 2;
+  return crossSection
+    .extrude(cutterHeight, 0, 0, 1, true)
+    .translate([0, 0, config.thickness / 2 - reliefDepth / 2]);
+}
+
 function meshToBuffers(manifold: ManifoldInstance, warnings: string[]): ModelBuffers {
   const mesh = manifold.getMesh();
   const positions = new Float32Array(mesh.numVert * 3);
@@ -224,20 +267,12 @@ export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometr
       warnings.push(...svgWarnings);
 
       if (crossSection) {
-        const overlap = 0.08;
-        const reliefDepth = Math.max(0.1, config.reliefDepth);
-
         if (config.reliefMode === 'raised') {
-          const reliefSolid = crossSection
-            .extrude(reliefDepth + overlap, 0, 0, 1, true)
-            .translate([0, 0, config.thickness / 2 + reliefDepth / 2 - overlap / 2]);
+          const reliefSolid = makeRaisedRelief(crossSection, config, api);
           result = result.add(reliefSolid);
           reliefSolid.delete();
         } else {
-          const cutterHeight = reliefDepth + overlap * 2;
-          const cutter = crossSection
-            .extrude(cutterHeight, 0, 0, 1, true)
-            .translate([0, 0, config.thickness / 2 - reliefDepth / 2]);
+          const cutter = makeEngravingCutter(crossSection, config);
           result = result.subtract(cutter);
           cutter.delete();
         }
