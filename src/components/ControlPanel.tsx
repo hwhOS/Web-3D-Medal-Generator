@@ -66,13 +66,14 @@ export function ControlPanel() {
   const { config, svg, backSvg, setConfig, setMaterialPreset, setSvg, setBackSvg, reset } = useMedalStore();
 
   const readSvgUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.currentTarget.files?.[0];
+    const input = event.currentTarget;
+    const file = input.files?.[0];
     if (!file) {
       return null;
     }
 
     const text = await file.text();
-    event.currentTarget.value = '';
+    input.value = '';
     return {
       text,
       fileName: file.name
@@ -160,11 +161,15 @@ export function ControlPanel() {
           <FileUp size={16} />
           <h2>SVG 纹理</h2>
         </div>
-        <button className="upload-box" type="button" onClick={() => document.getElementById('front-svg-upload')?.click()}>
-          <FileUp size={18} />
-          <span>{svg ? svg.fileName : '上传 SVG 图像'}</span>
-        </button>
-        <input id="front-svg-upload" className="file-input" type="file" accept=".svg,image/svg+xml" onChange={handleSvgUpload} />
+        <input
+          id="front-svg-upload"
+          className="upload-input"
+          type="file"
+          accept=".svg,image/svg+xml"
+          aria-label="上传 SVG 图像"
+          onChange={handleSvgUpload}
+        />
+        <div className="upload-file-name">{svg ? svg.fileName : '未选择 SVG 文件'}</div>
         {svg && (
           <button className="text-button" type="button" onClick={() => setSvg(null)}>
             移除 SVG
@@ -219,11 +224,15 @@ export function ControlPanel() {
           />
           <span>显示背面小 SVG</span>
         </label>
-        <button className="upload-box" type="button" onClick={() => document.getElementById('back-svg-upload')?.click()}>
-          <FileUp size={18} />
-          <span>{backSvg ? backSvg.fileName : '上传背面 SVG'}</span>
-        </button>
-        <input id="back-svg-upload" className="file-input" type="file" accept=".svg,image/svg+xml" onChange={handleBackSvgUpload} />
+        <input
+          id="back-svg-upload"
+          className="upload-input"
+          type="file"
+          accept=".svg,image/svg+xml"
+          aria-label="上传背面 SVG"
+          onChange={handleBackSvgUpload}
+        />
+        <div className="upload-file-name">{backSvg ? backSvg.fileName : '未选择背面 SVG'}</div>
         {backSvg && (
           <button className="text-button" type="button" onClick={() => setBackSvg(null)}>
             移除背面 SVG

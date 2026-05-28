@@ -192,27 +192,31 @@ button:disabled {
   accent-color: #b9872a;
 }
 
-.upload-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.upload-input {
   width: 100%;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 8px;
   border: 1px dashed #b8aa97;
   border-radius: 8px;
   background: #f8f5ee;
   color: #37332d;
-  text-align: left;
 }
 
-.file-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
+.upload-input::file-selector-button {
+  margin-right: 10px;
+  border: 1px solid #d5cbbb;
+  border-radius: 6px;
+  padding: 7px 10px;
+  background: #fffefa;
+  color: #2c2a26;
+  cursor: pointer;
+}
+
+.upload-file-name {
+  margin-top: 6px;
+  color: #6b645a;
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .text-button {
