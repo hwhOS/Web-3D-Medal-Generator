@@ -69,9 +69,28 @@ function MedalMesh({ model, config }: { model: ModelBuffers; config: MedalConfig
   );
 }
 
-function SceneCamera({ model, view }: { model: ModelBuffers | null; view: PreviewView }) {
+function modelCenter(model: ModelBuffers): Vector3 {
+  return new Vector3(
+    (model.bounds.min[0] + model.bounds.max[0]) / 2,
+    (model.bounds.min[1] + model.bounds.max[1]) / 2,
+    (model.bounds.min[2] + model.bounds.max[2]) / 2
+  );
+}
+
+function modelMaxDimension(model: ModelBuffers): number {
+  return Math.max(
+    model.bounds.max[0] - model.bounds.min[0],
+    model.bounds.max[1] - model.bounds.min[1],
+    model.bounds.max[2] - model.bounds.min[2]
+  );
+}
+
+function SceneCamera({ model, view, viewRequest }: { model: ModelBuffers | null; view: PreviewView; viewRequest: number }) {
   const { camera, invalidate, size } = useThree();
   const controlsRef = useRef<ElementRef<typeof OrbitControls>>(null);
+  const hasAppliedInitialView = useRef(false);
+  const lastAppliedViewRequest = useRef(-1);
+  const lastCenter = useRef<Vector3 | null>(null);
 
   useEffect(() => {
     if (!model) {
@@ -79,42 +98,51 @@ function SceneCamera({ model, view }: { model: ModelBuffers | null; view: Previe
     }
 
     const applyView = () => {
-      const center = new Vector3(
-        (model.bounds.min[0] + model.bounds.max[0]) / 2,
-        (model.bounds.min[1] + model.bounds.max[1]) / 2,
-        (model.bounds.min[2] + model.bounds.max[2]) / 2
-      );
-      const maxDimension = Math.max(
-        model.bounds.max[0] - model.bounds.min[0],
-        model.bounds.max[1] - model.bounds.min[1],
-        model.bounds.max[2] - model.bounds.min[2]
-      );
+      const center = modelCenter(model);
+      const maxDimension = modelMaxDimension(model);
       const fov = 'fov' in camera ? (camera.fov * Math.PI) / 180 : Math.PI / 4;
       const aspectFit = Math.max(1, size.height / Math.max(size.width, 1));
       const distance = Math.max(88, (maxDimension * 0.72 * aspectFit) / Math.tan(fov / 2));
-      const direction = new Vector3(...viewVectors[view]).normalize();
+      const controls = controlsRef.current;
+      const shouldApplyPreset = !hasAppliedInitialView.current || viewRequest !== lastAppliedViewRequest.current;
 
-      camera.position.copy(center).addScaledVector(direction, distance);
-      camera.up.fromArray(upVectors[view]);
-      camera.near = Math.max(0.1, distance / 500);
-      camera.far = distance * 8;
-      camera.lookAt(center);
-      camera.updateProjectionMatrix();
+      if (shouldApplyPreset) {
+        const direction = new Vector3(...viewVectors[view]).normalize();
+        camera.position.copy(center).addScaledVector(direction, distance);
+        camera.up.fromArray(upVectors[view]);
+        camera.lookAt(center);
 
-      if (controlsRef.current) {
-        controlsRef.current.target.copy(center);
-        controlsRef.current.object.position.copy(camera.position);
-        controlsRef.current.object.up.copy(camera.up);
-        controlsRef.current.enableDamping = false;
-        controlsRef.current.update();
-        controlsRef.current.enableDamping = true;
+        if (controls) {
+          controls.target.copy(center);
+          controls.object.position.copy(camera.position);
+          controls.object.up.copy(camera.up);
+          controls.enableDamping = false;
+          controls.update();
+          controls.enableDamping = true;
+        }
+
+        hasAppliedInitialView.current = true;
+        lastAppliedViewRequest.current = viewRequest;
+      } else if (controls && lastCenter.current) {
+        const centerDelta = center.clone().sub(lastCenter.current);
+        if (centerDelta.lengthSq() > 0.000001) {
+          camera.position.add(centerDelta);
+          controls.target.add(centerDelta);
+          controls.update();
+        }
       }
+
+      const controlDistance = controls ? camera.position.distanceTo(controls.target) : distance;
+      camera.near = Math.max(0.1, Math.min(controlDistance, distance) / 500);
+      camera.far = Math.max(controlDistance * 4, distance * 4, maxDimension * 8);
+      camera.updateProjectionMatrix();
+      lastCenter.current = center;
       invalidate();
     };
 
     const frame = window.requestAnimationFrame(applyView);
     return () => window.cancelAnimationFrame(frame);
-  }, [camera, invalidate, model, size.height, size.width, view]);
+  }, [camera, invalidate, model, size.height, size.width, view, viewRequest]);
 
   return <OrbitControls ref={controlsRef} makeDefault enableDamping minDistance={38} maxDistance={220} />;
 }
@@ -123,11 +151,13 @@ export function PreviewScene({
   model,
   config,
   view,
+  viewRequest,
   themeMode
 }: {
   model: ModelBuffers | null;
   config: MedalConfig;
   view: PreviewView;
+  viewRequest: number;
   themeMode: ThemeMode;
 }) {
   const effectiveTheme = useEffectiveTheme(themeMode);
@@ -168,7 +198,7 @@ export function PreviewScene({
         />
         {model && <MedalMesh model={model} config={config} />}
         <ContactShadows opacity={colors.shadowOpacity} scale={120} blur={2.5} far={30} position={[0, 0, -8]} />
-        <SceneCamera model={model} view={view} />
+        <SceneCamera model={model} view={view} viewRequest={viewRequest} />
       </Canvas>
     </div>
   );

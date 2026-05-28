@@ -22,6 +22,7 @@ export function App() {
   const language = useMedalStore((state) => state.language);
   const themeMode = useMedalStore((state) => state.themeMode);
   const [previewView, setPreviewView] = useState<PreviewView>('iso');
+  const [previewViewRequest, setPreviewViewRequest] = useState(0);
   const { status, model, error } = useMedalModel(config, svg, backSvg);
   const t = copy[language];
 
@@ -51,7 +52,10 @@ export function App() {
                   key={value}
                   className={previewView === value ? 'view-button is-selected' : 'view-button'}
                   type="button"
-                  onClick={() => setPreviewView(value)}
+                  onClick={() => {
+                    setPreviewView(value);
+                    setPreviewViewRequest((request) => request + 1);
+                  }}
                   title={t.views[value]}
                   aria-pressed={previewView === value}
                 >
@@ -63,7 +67,7 @@ export function App() {
             <div className="view-hint">{t.preview.hint}</div>
           </div>
         </div>
-        <PreviewScene model={model} config={config} view={previewView} themeMode={themeMode} />
+        <PreviewScene model={model} config={config} view={previewView} viewRequest={previewViewRequest} themeMode={themeMode} />
         <ExportPanel status={status} model={model} config={config} error={error} language={language} />
       </section>
     </main>
