@@ -190,36 +190,16 @@ function makeReliefCrossSection(
 
 function makeRaisedRelief(
   crossSection: CrossSectionInstance,
-  config: MedalConfig,
-  api: ManifoldApi
+  config: MedalConfig
 ): ManifoldInstance {
   const reliefDepth = Math.max(0.1, config.reliefDepth);
-  const overlap = 0.08;
-  const shoulderDepth = Math.min(0.22, reliefDepth * 0.42);
-  const upperDepth = Math.max(0.08, reliefDepth - shoulderDepth);
-  const insetAmount = Math.min(0.32, reliefDepth * 0.55);
+  const contactInset = 0.04;
+  const bevelScale = Math.max(0.94, 1 - reliefDepth * 0.06);
   const baseTop = config.thickness / 2;
 
-  const lower = crossSection
-    .extrude(shoulderDepth + overlap, 0, 0, 1, true)
-    .translate([0, 0, baseTop + shoulderDepth / 2 - overlap / 2]);
-
-  const inset = crossSection.offset(-insetAmount, 'Round', 2, Math.max(12, Math.round(config.quality / 6))).simplify(0.02);
-  if (inset.isEmpty()) {
-    inset.delete();
-    return lower;
-  }
-
-  const upper = inset
-    .extrude(upperDepth + overlap, 0, 0, 1, true)
-    .translate([0, 0, baseTop + shoulderDepth + upperDepth / 2 - overlap / 2]);
-  const raised = api.Manifold.union([lower, upper]);
-
-  lower.delete();
-  upper.delete();
-  inset.delete();
-
-  return raised;
+  return crossSection
+    .extrude(reliefDepth + contactInset, 1, 0, [bevelScale, bevelScale], false)
+    .translate([0, 0, baseTop - contactInset]);
 }
 
 function makeEngravingCutter(crossSection: CrossSectionInstance, config: MedalConfig): ManifoldInstance {
@@ -231,25 +211,49 @@ function makeEngravingCutter(crossSection: CrossSectionInstance, config: MedalCo
     .translate([0, 0, config.thickness / 2 - reliefDepth / 2]);
 }
 
-function meshToBuffers(manifold: ManifoldInstance, warnings: string[]): ModelBuffers {
-  const mesh = manifold.getMesh();
-  const positions = new Float32Array(mesh.numVert * 3);
-  for (let vertex = 0; vertex < mesh.numVert; vertex += 1) {
-    const sourceOffset = vertex * mesh.numProp;
-    const targetOffset = vertex * 3;
-    positions[targetOffset] = mesh.vertProperties[sourceOffset];
-    positions[targetOffset + 1] = mesh.vertProperties[sourceOffset + 1];
-    positions[targetOffset + 2] = mesh.vertProperties[sourceOffset + 2];
+function meshToBuffers(manifolds: ManifoldInstance[], warnings: string[]): ModelBuffers {
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  let volume = 0;
+  let surfaceArea = 0;
+
+  for (const manifold of manifolds) {
+    const mesh = manifold.getMesh();
+    const vertexOffset = positions.length / 3;
+
+    for (let vertex = 0; vertex < mesh.numVert; vertex += 1) {
+      const sourceOffset = vertex * mesh.numProp;
+      positions.push(
+        mesh.vertProperties[sourceOffset],
+        mesh.vertProperties[sourceOffset + 1],
+        mesh.vertProperties[sourceOffset + 2]
+      );
+    }
+
+    for (const index of mesh.triVerts) {
+      indices.push(index + vertexOffset);
+    }
+
+    const bounds = manifold.boundingBox();
+    for (let axis = 0; axis < 3; axis += 1) {
+      min[axis] = Math.min(min[axis], bounds.min[axis]);
+      max[axis] = Math.max(max[axis], bounds.max[axis]);
+    }
+
+    volume += manifold.volume();
+    surfaceArea += manifold.surfaceArea();
   }
 
   return {
-    positions,
-    indices: new Uint32Array(mesh.triVerts),
-    vertexCount: mesh.numVert,
-    triangleCount: mesh.numTri,
-    volume: manifold.volume(),
-    surfaceArea: manifold.surfaceArea(),
-    bounds: manifold.boundingBox(),
+    positions: new Float32Array(positions),
+    indices: new Uint32Array(indices),
+    vertexCount: positions.length / 3,
+    triangleCount: indices.length / 3,
+    volume,
+    surfaceArea,
+    bounds: { min, max },
     warnings,
     generatedAt: Date.now()
   };
@@ -260,6 +264,7 @@ export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometr
   const warnings: string[] = [];
   const { solid: baseSolid, topOutline, footprint } = makeBase(config, api);
   let result: ManifoldInstance = baseSolid;
+  let raisedRelief: ManifoldInstance | null = null;
 
   try {
     if (svg?.polygons.length) {
@@ -268,9 +273,8 @@ export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometr
 
       if (crossSection) {
         if (config.reliefMode === 'raised') {
-          const reliefSolid = makeRaisedRelief(crossSection, config, api);
-          result = result.add(reliefSolid);
-          reliefSolid.delete();
+          // Keep raised artwork as its own shell to avoid CSG remeshing artifacts on the medal face.
+          raisedRelief = makeRaisedRelief(crossSection, config);
         } else {
           const cutter = makeEngravingCutter(crossSection, config);
           result = result.subtract(cutter);
@@ -281,13 +285,20 @@ export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometr
       }
     }
 
-    const status = result.status();
-    if (status !== 'NoError') {
-      throw new Error(`Manifold status: ${status}`);
+    const outputSolids = result === baseSolid && raisedRelief ? [baseSolid, raisedRelief] : [result];
+    for (const solid of outputSolids) {
+      const status = solid.status();
+      if (status !== 'NoError') {
+        throw new Error(`Manifold status: ${status}`);
+      }
     }
 
-    return meshToBuffers(result, warnings);
+    return meshToBuffers(outputSolids, warnings);
   } finally {
+    if (raisedRelief) {
+      raisedRelief.delete();
+    }
+
     if (result !== baseSolid) {
       baseSolid.delete();
       result.delete();

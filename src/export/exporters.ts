@@ -22,7 +22,7 @@ export function createMedalGeometry(model: ModelBuffers): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(model.positions.slice(), 3));
   geometry.setIndex(new BufferAttribute(model.indices.slice(), 1));
-  const creased = toCreasedNormals(geometry, Math.PI / 4);
+  const creased = toCreasedNormals(geometry, Math.PI / 9);
   creased.computeBoundingSphere();
   geometry.dispose();
   return creased;
