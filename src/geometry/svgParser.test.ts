@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { svgSamples } from '../domain/svgSamples';
 import { parseSvgToPolygons } from './svgParser';
 
 describe('parseSvgToPolygons', () => {
@@ -16,5 +17,13 @@ describe('parseSvgToPolygons', () => {
 
     expect(parsed.warnings.some((warning) => warning.includes('script'))).toBe(true);
     expect(parsed.warnings.some((warning) => warning.includes('外链'))).toBe(true);
+  });
+
+  it('parses every built-in SVG sample', () => {
+    for (const sample of svgSamples) {
+      const parsed = parseSvgToPolygons(sample.text, { curveSegments: 12 });
+
+      expect(parsed.polygons.length, sample.id).toBeGreaterThan(0);
+    }
   });
 });

@@ -12,7 +12,9 @@ import {
   Type
 } from 'lucide-react';
 import type { ChangeEvent } from 'react';
+import { createDefaultBackText } from '../domain/defaults';
 import { materialPresets } from '../domain/materials';
+import { findSvgSampleId, getSvgSampleInput, svgSamples, type SvgSampleId } from '../domain/svgSamples';
 import type { MaterialPreset, MedalShape } from '../domain/types';
 import { copy } from '../i18n';
 import { useMedalStore } from '../store/useMedalStore';
@@ -66,6 +68,8 @@ function NumberField({
 export function ControlPanel() {
   const { config, svg, backSvg, language, setConfig, setMaterialPreset, setLanguage, setSvg, setBackSvg, reset } = useMedalStore();
   const t = copy[language];
+  const frontSampleId = findSvgSampleId(svg);
+  const backSampleId = findSvgSampleId(backSvg);
 
   const readSvgUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -93,6 +97,24 @@ export function ControlPanel() {
     const nextSvg = await readSvgUpload(event);
     if (nextSvg) {
       setBackSvg(nextSvg);
+    }
+  };
+
+  const handleFrontSampleSelect = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.currentTarget.value;
+    if (value === 'none') {
+      setSvg(null);
+    } else if (value !== 'custom') {
+      setSvg(getSvgSampleInput(value as SvgSampleId));
+    }
+  };
+
+  const handleBackSampleSelect = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.currentTarget.value;
+    if (value === 'none') {
+      setBackSvg(null);
+    } else if (value !== 'custom') {
+      setBackSvg(getSvgSampleInput(value as SvgSampleId));
     }
   };
 
@@ -174,6 +196,18 @@ export function ControlPanel() {
           <FileUp size={16} />
           <h2>{t.sections.svg}</h2>
         </div>
+        <label className="select-field">
+          <span>{t.fields.frontSample}</span>
+          <select value={frontSampleId} onChange={handleFrontSampleSelect}>
+            <option value="none">{t.upload.noSample}</option>
+            {svgSamples.map((sample) => (
+              <option key={sample.id} value={sample.id}>
+                {sample.label[language]}
+              </option>
+            ))}
+            {frontSampleId === 'custom' && <option value="custom">{t.upload.uploadedSample}</option>}
+          </select>
+        </label>
         <input
           id="front-svg-upload"
           className="upload-input"
@@ -188,7 +222,7 @@ export function ControlPanel() {
             {t.upload.removeSvg}
           </button>
         )}
-        <NumberField label={t.fields.reliefDepth} value={config.reliefDepth} min={0.2} max={4} step={0.1} unit="mm" onChange={(reliefDepth) => setConfig({ reliefDepth })} />
+        <NumberField label={t.fields.reliefDepth} value={config.reliefDepth} min={0.1} max={1} step={0.05} unit="mm" onChange={(reliefDepth) => setConfig({ reliefDepth })} />
         <NumberField label={t.fields.scale} value={config.reliefScale} min={20} max={110} unit="%" onChange={(reliefScale) => setConfig({ reliefScale })} />
         <NumberField label={t.fields.rotation} value={config.reliefRotation} min={-180} max={180} unit="deg" onChange={(reliefRotation) => setConfig({ reliefRotation })} />
         <NumberField label={t.fields.offsetX} value={config.reliefOffsetX} min={-30} max={30} unit="mm" onChange={(reliefOffsetX) => setConfig({ reliefOffsetX })} />
@@ -211,13 +245,13 @@ export function ControlPanel() {
           <textarea
             aria-label={t.fields.text}
             rows={3}
-            placeholder={'EARNED BY TONY\nON 28 MAY 2026'}
+            placeholder={createDefaultBackText()}
             value={config.backText}
             onChange={(event) => setConfig({ backText: event.currentTarget.value.toUpperCase() })}
           />
         </label>
         <NumberField label={t.fields.textSize} value={config.backTextSize} min={1.5} max={8} step={0.1} unit="mm" onChange={(backTextSize) => setConfig({ backTextSize })} />
-        <NumberField label={t.fields.markHeight} value={config.backMarkDepth} min={0.1} max={1.5} step={0.05} unit="mm" onChange={(backMarkDepth) => setConfig({ backMarkDepth })} />
+        <NumberField label={t.fields.markHeight} value={config.backMarkDepth} min={0.1} max={1} step={0.05} unit="mm" onChange={(backMarkDepth) => setConfig({ backMarkDepth })} />
         <NumberField label={t.fields.textOffsetY} value={config.backTextOffsetY} min={-24} max={24} unit="mm" onChange={(backTextOffsetY) => setConfig({ backTextOffsetY })} />
         <label className="toggle-row">
           <input
@@ -226,6 +260,18 @@ export function ControlPanel() {
             onChange={(event) => setConfig({ backLogoEnabled: event.currentTarget.checked })}
           />
           <span>{t.fields.showBackSvg}</span>
+        </label>
+        <label className="select-field">
+          <span>{t.fields.backSample}</span>
+          <select value={backSampleId} onChange={handleBackSampleSelect}>
+            <option value="none">{t.upload.noSample}</option>
+            {svgSamples.map((sample) => (
+              <option key={sample.id} value={sample.id}>
+                {sample.label[language]}
+              </option>
+            ))}
+            {backSampleId === 'custom' && <option value="custom">{t.upload.uploadedSample}</option>}
+          </select>
         </label>
         <input
           id="back-svg-upload"

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createDefaultConfig } from '../domain/defaults';
 import { materialPresets } from '../domain/materials';
+import { randomSvgSampleInput } from '../domain/svgSamples';
 import type { MaterialPreset, MedalConfig, SvgReliefInput } from '../domain/types';
 import type { Language } from '../i18n';
 
@@ -19,8 +20,8 @@ interface MedalState {
 
 export const useMedalStore = create<MedalState>((set) => ({
   config: createDefaultConfig(),
-  svg: null,
-  backSvg: null,
+  svg: randomSvgSampleInput(),
+  backSvg: randomSvgSampleInput(),
   language: 'en',
   setConfig: (patch) =>
     set((state) => ({
@@ -56,7 +57,7 @@ export const useMedalStore = create<MedalState>((set) => ({
   reset: () =>
     set({
       config: createDefaultConfig(),
-      svg: null,
-      backSvg: null
+      svg: randomSvgSampleInput(),
+      backSvg: randomSvgSampleInput()
     })
 }));

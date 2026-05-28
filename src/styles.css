@@ -180,6 +180,24 @@ button:disabled {
   line-height: 1.35;
 }
 
+.select-field {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  color: #514d46;
+  font-size: 13px;
+}
+
+.select-field select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #d5cbbb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fffefa;
+  color: #2c2a26;
+}
+
 .toggle-row {
   display: flex;
   align-items: center;

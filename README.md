@@ -4,7 +4,7 @@ A browser-based 3D medal generator that turns uploaded SVG artwork into raised m
 
 ## Features
 
-- Upload SVG artwork and convert it into front-face relief geometry.
+- Choose built-in SVG samples or upload SVG artwork and convert it into front-face relief geometry.
 - Customize medal shape, dimensions, thickness, edge bevel, and curve quality.
 - Adjust relief depth, scale, rotation, and X/Y placement.
 - Choose metallic material presets or custom color, metalness, and roughness for the base medal.

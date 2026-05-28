@@ -19,6 +19,7 @@ type Copy = {
     | 'cornerRadius'
     | 'polygonSides'
     | 'quality'
+    | 'frontSample'
     | 'reliefDepth'
     | 'scale'
     | 'rotation'
@@ -32,6 +33,7 @@ type Copy = {
     | 'markHeight'
     | 'textOffsetY'
     | 'showBackSvg'
+    | 'backSample'
     | 'markColor'
     | 'markMetalness'
     | 'markRoughness'
@@ -42,7 +44,7 @@ type Copy = {
     | 'baseRoughness',
     string
   >;
-  upload: Record<'frontAria' | 'backAria' | 'noFront' | 'noBack' | 'removeSvg' | 'removeBackSvg', string>;
+  upload: Record<'frontAria' | 'backAria' | 'noFront' | 'noBack' | 'removeSvg' | 'removeBackSvg' | 'noSample' | 'uploadedSample', string>;
   materials: Record<MaterialPreset, string>;
   reset: string;
   preview: Record<'eyebrow' | 'title' | 'hint', string>;
@@ -86,6 +88,7 @@ export const copy: Record<Language, Copy> = {
       cornerRadius: 'Corner Radius',
       polygonSides: 'Sides',
       quality: 'Curve Quality',
+      frontSample: 'Front Sample',
       reliefDepth: 'Relief Depth',
       scale: 'Scale',
       rotation: 'Rotation',
@@ -99,6 +102,7 @@ export const copy: Record<Language, Copy> = {
       markHeight: 'Mark Height',
       textOffsetY: 'Text Y Position',
       showBackSvg: 'Show Small Back SVG',
+      backSample: 'Back Sample',
       markColor: 'Text Color',
       markMetalness: 'Text Metalness',
       markRoughness: 'Text Roughness',
@@ -114,7 +118,9 @@ export const copy: Record<Language, Copy> = {
       noFront: 'No SVG selected',
       noBack: 'No back SVG selected',
       removeSvg: 'Remove SVG',
-      removeBackSvg: 'Remove back SVG'
+      removeBackSvg: 'Remove back SVG',
+      noSample: 'None',
+      uploadedSample: 'Uploaded file'
     },
     materials: {
       gold: 'Gold',
@@ -181,6 +187,7 @@ export const copy: Record<Language, Copy> = {
       cornerRadius: '圆角',
       polygonSides: '边数',
       quality: '曲线精度',
+      frontSample: '正面样板',
       reliefDepth: '浮雕深度',
       scale: '缩放',
       rotation: '旋转',
@@ -194,6 +201,7 @@ export const copy: Record<Language, Copy> = {
       markHeight: '刻字高度',
       textOffsetY: '文字垂直位置',
       showBackSvg: '显示背面小 SVG',
+      backSample: '背面样板',
       markColor: '刻字颜色',
       markMetalness: '刻字金属度',
       markRoughness: '刻字粗糙度',
@@ -209,7 +217,9 @@ export const copy: Record<Language, Copy> = {
       noFront: '未选择 SVG 文件',
       noBack: '未选择背面 SVG',
       removeSvg: '移除 SVG',
-      removeBackSvg: '移除背面 SVG'
+      removeBackSvg: '移除背面 SVG',
+      noSample: '不使用样板',
+      uploadedSample: '已上传文件'
     },
     materials: {
       gold: '金色',

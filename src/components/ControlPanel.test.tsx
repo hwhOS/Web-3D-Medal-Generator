@@ -17,12 +17,24 @@ describe('ControlPanel', () => {
 
     expect(screen.getByText('Medal Generator')).toBeInTheDocument();
     expect(screen.queryByText('Engrave')).not.toBeInTheDocument();
+    expect(screen.getByText('Front Sample')).toBeInTheDocument();
+    expect(screen.getByText('Back Sample')).toBeInTheDocument();
     expect(screen.getByText('Relief Color')).toBeInTheDocument();
     expect(screen.getByText('Text Roughness')).toBeInTheDocument();
     const thickness = screen.getByLabelText(/Thickness/i);
     fireEvent.change(thickness, { target: { value: '8' } });
 
     expect(useMedalStore.getState().config.thickness).toBe(8);
+  });
+
+  it('can choose built-in SVG samples', () => {
+    render(<ControlPanel />);
+
+    fireEvent.change(screen.getByLabelText('Front Sample'), { target: { value: 'apple' } });
+    fireEvent.change(screen.getByLabelText('Back Sample'), { target: { value: 'star' } });
+
+    expect(useMedalStore.getState().svg?.fileName).toBe('apple-logo.svg');
+    expect(useMedalStore.getState().backSvg?.fileName).toBe('star-medal.svg');
   });
 
   it('can switch the interface to Chinese', () => {
