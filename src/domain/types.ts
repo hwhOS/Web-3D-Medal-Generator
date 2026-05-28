@@ -35,6 +35,7 @@ export interface MedalConfig {
   reliefRotation: number;
   reliefOffsetX: number;
   reliefOffsetY: number;
+  reliefInvert: boolean;
   reliefColor: string;
   reliefMetalness: number;
   reliefRoughness: number;

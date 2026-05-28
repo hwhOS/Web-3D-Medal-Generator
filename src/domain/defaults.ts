@@ -33,6 +33,7 @@ export function createDefaultConfig(date = new Date()): MedalConfig {
     reliefRotation: 0,
     reliefOffsetX: 0,
     reliefOffsetY: 0,
+    reliefInvert: false,
     reliefColor: silver.color,
     reliefMetalness: silver.metalness,
     reliefRoughness: 0,

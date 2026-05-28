@@ -26,6 +26,7 @@ type Copy = {
     | 'rotation'
     | 'offsetX'
     | 'offsetY'
+    | 'reliefInvert'
     | 'reliefColor'
     | 'reliefMetalness'
     | 'reliefRoughness'
@@ -100,6 +101,7 @@ export const copy: Record<Language, Copy> = {
       rotation: 'Rotation',
       offsetX: 'X Offset',
       offsetY: 'Y Offset',
+      reliefInvert: 'Raise Empty Space',
       reliefColor: 'Relief Color',
       reliefMetalness: 'Relief Metalness',
       reliefRoughness: 'Relief Roughness',
@@ -227,6 +229,7 @@ export const copy: Record<Language, Copy> = {
       rotation: '旋转',
       offsetX: '水平偏移',
       offsetY: '垂直偏移',
+      reliefInvert: '凸显空白区域',
       reliefColor: '浮雕颜色',
       reliefMetalness: '浮雕金属度',
       reliefRoughness: '浮雕粗糙度',

@@ -165,6 +165,21 @@ function makeBase(
   };
 }
 
+function boundsRectangle(bounds: { min: Point2; max: Point2 }): Point2[] {
+  const width = bounds.max[0] - bounds.min[0];
+  const height = bounds.max[1] - bounds.min[1];
+  if (width <= 0 || height <= 0) {
+    return [];
+  }
+
+  return [
+    [bounds.min[0], bounds.min[1]],
+    [bounds.max[0], bounds.min[1]],
+    [bounds.max[0], bounds.max[1]],
+    [bounds.min[0], bounds.max[1]]
+  ];
+}
+
 function makeReliefCrossSection(
   svg: SvgReliefGeometry,
   config: MedalConfig,
@@ -197,14 +212,25 @@ function makeReliefCrossSection(
 
   const relief = api.CrossSection.ofPolygons(normalized, 'EvenOdd').simplify(0.03);
   const topClip = api.CrossSection.ofPolygons([topOutline], 'Positive');
-  const clipped = relief.intersect(topClip).simplify(0.02);
+  let clipped: CrossSectionInstance;
+
+  if (config.reliefInvert && reliefBounds) {
+    const framePolygon = boundsRectangle(reliefBounds);
+    const frame = api.CrossSection.ofPolygons([framePolygon], 'Positive');
+    const inverted = frame.subtract(relief).simplify(0.02);
+    clipped = inverted.intersect(topClip).simplify(0.02);
+    frame.delete();
+    inverted.delete();
+  } else {
+    clipped = relief.intersect(topClip).simplify(0.02);
+  }
 
   relief.delete();
   topClip.delete();
 
   if (clipped.isEmpty()) {
     clipped.delete();
-    warnings.push('SVG 纹理与奖牌正面没有重叠。');
+    warnings.push(config.reliefInvert ? 'SVG 外接框内没有可凸显的空白区域。' : 'SVG 纹理与奖牌正面没有重叠。');
     return { crossSection: null, warnings };
   }
 

@@ -224,6 +224,14 @@ export function ControlPanel() {
             {t.upload.removeSvg}
           </button>
         )}
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={config.reliefInvert}
+            onChange={(event) => setConfig({ reliefInvert: event.currentTarget.checked })}
+          />
+          <span>{t.fields.reliefInvert}</span>
+        </label>
         <NumberField label={t.fields.reliefDepth} value={config.reliefDepth} min={0.1} max={1} step={0.05} unit="mm" onChange={(reliefDepth) => setConfig({ reliefDepth })} />
         <NumberField label={t.fields.scale} value={config.reliefScale} min={20} max={110} unit="%" onChange={(reliefScale) => setConfig({ reliefScale })} />
         <NumberField label={t.fields.rotation} value={config.reliefRotation} min={-180} max={180} unit="deg" onChange={(reliefRotation) => setConfig({ reliefRotation })} />

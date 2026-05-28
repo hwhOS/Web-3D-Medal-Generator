@@ -10,6 +10,13 @@ const svg = {
   })
 };
 
+const gapSvg = {
+  fileName: 'gap-mark.svg',
+  ...parseSvgToPolygons('<svg viewBox="0 0 100 100"><path fill="#000" d="M20 20H38V80H20Z M62 20H80V80H62Z"/></svg>', {
+    curveSegments: 8
+  })
+};
+
 describe('buildMedalModel', () => {
   it('builds a non-empty medal mesh without SVG relief', async () => {
     const model = await buildMedalModel(defaultConfig, null);
@@ -28,6 +35,17 @@ describe('buildMedalModel', () => {
     expect(raised.volume).toBeGreaterThan(base.volume);
     expect(raised.reliefIndexStart).toBeGreaterThan(0);
     expect(raised.reliefIndexStart).toBeLessThan(raised.indices.length);
+  });
+
+  it('can raise the empty space inside the SVG artwork bounds', async () => {
+    const config = { ...defaultConfig, backText: '', reliefInvert: true };
+    const base = await buildMedalModel(config, null);
+    const inverted = await buildMedalModel(config, gapSvg);
+
+    expect(inverted.volume).toBeGreaterThan(base.volume);
+    expect(inverted.reliefIndexStart).toBeGreaterThan(0);
+    expect(inverted.reliefIndexStart).toBeLessThan(inverted.indices.length);
+    expect(inverted.warnings).not.toContain('SVG 外接框内没有可凸显的空白区域。');
   });
 
   it('adds raised back text and optional back SVG below it', async () => {

@@ -20,6 +20,7 @@ describe('ControlPanel', () => {
     expect(screen.queryByText('Engrave')).not.toBeInTheDocument();
     expect(screen.getByText('Front Sample')).toBeInTheDocument();
     expect(screen.getByText('Back Sample')).toBeInTheDocument();
+    expect(screen.getByText('Raise Empty Space')).toBeInTheDocument();
     expect(screen.getByText('Relief Color')).toBeInTheDocument();
     expect(screen.getByText('Text Roughness')).toBeInTheDocument();
     expect(screen.getByText('Appearance')).toBeInTheDocument();
@@ -28,6 +29,10 @@ describe('ControlPanel', () => {
     fireEvent.change(thickness, { target: { value: '8' } });
 
     expect(useMedalStore.getState().config.thickness).toBe(8);
+
+    fireEvent.click(screen.getByText('Raise Empty Space'));
+
+    expect(useMedalStore.getState().config.reliefInvert).toBe(true);
   });
 
   it('can choose built-in SVG samples', () => {

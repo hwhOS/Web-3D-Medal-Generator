@@ -7,6 +7,7 @@ describe('defaultConfig', () => {
     expect(defaultConfig.thickness).toBeGreaterThan(0);
     expect(defaultConfig.diameter).toBeGreaterThan(defaultConfig.thickness);
     expect(defaultConfig.reliefDepth).toBe(0.1);
+    expect(defaultConfig.reliefInvert).toBe(false);
     expect(defaultConfig.backMarkDepth).toBe(0.1);
     expect(defaultConfig.edgeBevel).toBe(0.6);
     expect(defaultConfig.quality).toBeGreaterThanOrEqual(144);
