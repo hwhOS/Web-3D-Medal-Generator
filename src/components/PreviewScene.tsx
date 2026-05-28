@@ -8,6 +8,14 @@ import { createMedalGeometry, hasBackMarkGeometry, hasReliefGeometry } from '../
 
 export type PreviewView = 'iso' | 'front' | 'back' | 'right' | 'top';
 
+export interface PreviewSettings {
+  showGrid: boolean;
+  showShadows: boolean;
+  ambientLight: number;
+  keyLight: number;
+  fillLight: number;
+}
+
 const viewVectors: Record<PreviewView, [number, number, number]> = {
   iso: [0.55, -0.8, 0.62],
   front: [0, -0.03, 1],
@@ -152,12 +160,14 @@ export function PreviewScene({
   config,
   view,
   viewRequest,
+  settings,
   themeMode
 }: {
   model: ModelBuffers | null;
   config: MedalConfig;
   view: PreviewView;
   viewRequest: number;
+  settings: PreviewSettings;
   themeMode: ThemeMode;
 }) {
   const effectiveTheme = useEffectiveTheme(themeMode);
@@ -178,26 +188,28 @@ export function PreviewScene({
 
   return (
     <div className="preview-shell">
-      <Canvas camera={{ position: [0, -105, 72], fov: 42 }} shadows gl={{ antialias: true }}>
+      <Canvas camera={{ position: [0, -105, 72], fov: 42 }} shadows={settings.showShadows} gl={{ antialias: true }}>
         <color attach="background" args={[colors.background]} />
-        <ambientLight intensity={effectiveTheme === 'dark' ? 0.95 : 0.8} />
-        <directionalLight position={[32, -44, 70]} intensity={effectiveTheme === 'dark' ? 2.5 : 2.2} castShadow />
-        <directionalLight position={[-55, 32, 35]} intensity={effectiveTheme === 'dark' ? 1 : 0.8} />
+        <ambientLight intensity={settings.ambientLight} />
+        <directionalLight position={[32, -44, 70]} intensity={settings.keyLight} castShadow={settings.showShadows} />
+        <directionalLight position={[-55, 32, 35]} intensity={settings.fillLight} />
         <Environment preset="city" />
-        <Grid
-          position={[0, 0, -8]}
-          args={[180, 180]}
-          cellSize={10}
-          cellThickness={0.6}
-          sectionSize={30}
-          sectionThickness={1}
-          fadeDistance={150}
-          fadeStrength={1.5}
-          cellColor={colors.gridCell}
-          sectionColor={colors.gridSection}
-        />
+        {settings.showGrid && (
+          <Grid
+            position={[0, 0, -8]}
+            args={[180, 180]}
+            cellSize={10}
+            cellThickness={0.6}
+            sectionSize={30}
+            sectionThickness={1}
+            fadeDistance={150}
+            fadeStrength={1.5}
+            cellColor={colors.gridCell}
+            sectionColor={colors.gridSection}
+          />
+        )}
         {model && <MedalMesh model={model} config={config} />}
-        <ContactShadows opacity={colors.shadowOpacity} scale={120} blur={2.5} far={30} position={[0, 0, -8]} />
+        {settings.showShadows && <ContactShadows opacity={colors.shadowOpacity} scale={120} blur={2.5} far={30} position={[0, 0, -8]} />}
         <SceneCamera model={model} view={view} viewRequest={viewRequest} />
       </Canvas>
     </div>

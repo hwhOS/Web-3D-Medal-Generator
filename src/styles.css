@@ -446,6 +446,9 @@ button:disabled {
 }
 
 .preview-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 14px;
   min-width: 0;
 }
 
@@ -474,9 +477,15 @@ button:disabled {
   gap: 6px;
 }
 
+.sidebar-view-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .view-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   min-height: 32px;
   padding: 6px 9px;
@@ -489,7 +498,9 @@ button:disabled {
 }
 
 .preview-shell {
-  height: clamp(420px, 62vh, 640px);
+  width: min(100%, calc(100vh - 132px));
+  aspect-ratio: 1;
+  justify-self: center;
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -507,6 +518,42 @@ button:disabled {
   border-radius: 8px;
   background: var(--panel-bg);
   backdrop-filter: blur(18px);
+}
+
+.preview-panel {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(18px);
+}
+
+.sidebar-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+.sidebar-section-title h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 680;
+}
+
+.sidebar-section-title svg {
+  color: var(--muted);
+}
+
+.compact-field {
+  margin: 8px 0;
+}
+
+.advanced-toggle {
+  margin: 8px 0;
 }
 
 .status-row {
@@ -606,7 +653,7 @@ button:disabled {
   }
 
   .preview-shell {
-    height: clamp(420px, 58vh, 600px);
+    width: min(100%, 640px);
   }
 
   .stats-grid {
@@ -615,6 +662,14 @@ button:disabled {
 
   .export-buttons {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .preview-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .preview-sidebar .export-panel {
+    grid-column: 1 / -1;
   }
 }
 
@@ -633,9 +688,6 @@ button:disabled {
     min-height: 720px;
   }
 
-  .preview-shell {
-    height: clamp(420px, 68vh, 640px);
-  }
 }
 
 @media (max-width: 620px) {
@@ -652,7 +704,7 @@ button:disabled {
   }
 
   .preview-shell {
-    height: 420px;
+    width: 100%;
   }
 
   .preview-header {
@@ -667,5 +719,9 @@ button:disabled {
 
   .view-controls {
     justify-content: flex-start;
+  }
+
+  .preview-sidebar {
+    grid-template-columns: 1fr;
   }
 }

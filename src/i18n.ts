@@ -51,6 +51,7 @@ type Copy = {
   reset: string;
   preview: Record<'eyebrow' | 'title' | 'hint', string>;
   views: Record<'iso' | 'front' | 'back' | 'right' | 'top', string>;
+  previewSettings: Record<'views' | 'advanced' | 'showGrid' | 'showShadows' | 'ambientLight' | 'keyLight' | 'fillLight', string>;
   exportPanel: {
     aria: string;
     status: Record<'idle' | 'generating' | 'ready' | 'error', string>;
@@ -156,6 +157,15 @@ export const copy: Record<Language, Copy> = {
       back: 'Back',
       right: 'Right',
       top: 'Top'
+    },
+    previewSettings: {
+      views: 'Views',
+      advanced: 'Advanced Preview',
+      showGrid: 'Show Grid',
+      showShadows: 'Show Shadows',
+      ambientLight: 'Ambient Light',
+      keyLight: 'Key Light',
+      fillLight: 'Fill Light'
     },
     exportPanel: {
       aria: 'Export model',
@@ -274,6 +284,15 @@ export const copy: Record<Language, Copy> = {
       back: '背面',
       right: '右侧',
       top: '顶部'
+    },
+    previewSettings: {
+      views: '视角',
+      advanced: '高级预览',
+      showGrid: '显示网格',
+      showShadows: '显示阴影',
+      ambientLight: '环境光',
+      keyLight: '主光',
+      fillLight: '辅光'
     },
     exportPanel: {
       aria: '导出模型',
