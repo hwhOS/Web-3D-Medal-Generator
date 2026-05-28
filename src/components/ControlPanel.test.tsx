@@ -15,6 +15,8 @@ describe('ControlPanel', () => {
     render(<ControlPanel />);
 
     expect(screen.getByText('奖牌生成器')).toBeInTheDocument();
+    expect(screen.queryByText('凹刻')).not.toBeInTheDocument();
+    expect(screen.getByText('浮雕颜色')).toBeInTheDocument();
     const thickness = screen.getByLabelText(/厚度/i);
     fireEvent.change(thickness, { target: { value: '8' } });
 

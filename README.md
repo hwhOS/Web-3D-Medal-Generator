@@ -1,14 +1,14 @@
 # Web 3D Medal Generator
 
-A browser-based 3D medal generator that turns uploaded SVG artwork into raised or engraved medal face details. The tool provides live 3D preview, customizable medal geometry and material controls, and exports printable/shareable 3D model formats.
+A browser-based 3D medal generator that turns uploaded SVG artwork into raised medal face details. The tool provides live 3D preview, customizable medal geometry and material controls, and exports printable/shareable 3D model formats.
 
 ## Features
 
 - Upload SVG artwork and convert it into front-face relief geometry.
-- Choose raised or engraved relief.
 - Customize medal shape, dimensions, thickness, edge bevel, and curve quality.
 - Adjust relief depth, scale, rotation, and X/Y placement.
-- Choose metallic material presets or custom color, metalness, and roughness.
+- Choose metallic material presets or custom color, metalness, and roughness for the base medal.
+- Customize the raised SVG relief color, metalness, and roughness separately.
 - Preview the generated medal in an interactive Three.js scene.
 - Export models as:
   - STL for 3D printing.
@@ -79,7 +79,7 @@ The current implementation has tests for:
 
 - Default configuration.
 - SVG parsing and unsupported-feature warnings.
-- Geometry generation for base medals and relief volume changes.
+- Geometry generation for base medals, raised relief, and back markings.
 - Export blob generation.
 - Main control panel behavior.
 

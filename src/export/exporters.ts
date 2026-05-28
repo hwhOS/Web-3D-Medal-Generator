@@ -22,12 +22,36 @@ export function hasBackMarkGeometry(model: ModelBuffers): boolean {
   return typeof model.markIndexStart === 'number' && model.markIndexStart < model.indices.length;
 }
 
-export function createMedalGeometry(model: ModelBuffers, section: 'all' | 'base' | 'mark' = 'all'): BufferGeometry {
+export function hasReliefGeometry(model: ModelBuffers): boolean {
+  const markStart = model.markIndexStart ?? model.indices.length;
+  return typeof model.reliefIndexStart === 'number' && model.reliefIndexStart < markStart;
+}
+
+type GeometrySection = 'all' | 'base' | 'relief' | 'mark';
+
+function geometryRange(model: ModelBuffers, section: GeometrySection): [number, number] {
+  const markStart = model.markIndexStart ?? model.indices.length;
+  const reliefStart = model.reliefIndexStart ?? markStart;
+
+  if (section === 'base') {
+    return [0, reliefStart];
+  }
+
+  if (section === 'relief') {
+    return [reliefStart, markStart];
+  }
+
+  if (section === 'mark') {
+    return [markStart, model.indices.length];
+  }
+
+  return [0, model.indices.length];
+}
+
+export function createMedalGeometry(model: ModelBuffers, section: GeometrySection = 'all'): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(model.positions.slice(), 3));
-  const markStart = model.markIndexStart ?? model.indices.length;
-  const start = section === 'mark' ? markStart : 0;
-  const end = section === 'base' ? markStart : model.indices.length;
+  const [start, end] = geometryRange(model, section);
   geometry.setIndex(new BufferAttribute(model.indices.slice(start, end), 1));
   const creased = toCreasedNormals(geometry, Math.PI / 9);
   creased.computeBoundingSphere();
@@ -52,6 +76,14 @@ function createBackMarkMaterial(config: MedalConfig): Material {
   });
 }
 
+function createReliefMaterial(config: MedalConfig): Material {
+  return new MeshStandardMaterial({
+    color: new Color(config.reliefColor),
+    metalness: config.reliefMetalness,
+    roughness: config.reliefRoughness
+  });
+}
+
 function createExportObject(model: ModelBuffers, config: MedalConfig, unitScale: number): Object3D {
   const scene = new Scene();
   scene.name = 'medal-export';
@@ -60,6 +92,13 @@ function createExportObject(model: ModelBuffers, config: MedalConfig, unitScale:
   medalMesh.name = 'custom-medal';
   medalMesh.scale.setScalar(unitScale);
   scene.add(medalMesh);
+
+  if (hasReliefGeometry(model)) {
+    const reliefMesh = new Mesh(createMedalGeometry(model, 'relief'), createReliefMaterial(config));
+    reliefMesh.name = 'front-relief';
+    reliefMesh.scale.setScalar(unitScale);
+    scene.add(reliefMesh);
+  }
 
   if (hasBackMarkGeometry(model)) {
     const markMesh = new Mesh(createMedalGeometry(model, 'mark'), createBackMarkMaterial(config));

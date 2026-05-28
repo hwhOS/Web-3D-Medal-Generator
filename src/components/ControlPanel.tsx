@@ -153,7 +153,7 @@ export function ControlPanel() {
         {config.shape === 'polygon' && (
           <NumberField label="边数" value={config.polygonSides} min={3} max={12} onChange={(polygonSides) => setConfig({ polygonSides })} />
         )}
-        <NumberField label="曲线精度" value={config.quality} min={32} max={160} step={4} onChange={(quality) => setConfig({ quality })} />
+        <NumberField label="曲线精度" value={config.quality} min={48} max={240} step={4} onChange={(quality) => setConfig({ quality })} />
       </section>
 
       <section className="control-section">
@@ -175,27 +175,17 @@ export function ControlPanel() {
             移除 SVG
           </button>
         )}
-        <div className="segmented">
-          <button
-            className={config.reliefMode === 'raised' ? 'is-selected' : ''}
-            type="button"
-            onClick={() => setConfig({ reliefMode: 'raised' })}
-          >
-            凸起
-          </button>
-          <button
-            className={config.reliefMode === 'engraved' ? 'is-selected' : ''}
-            type="button"
-            onClick={() => setConfig({ reliefMode: 'engraved' })}
-          >
-            凹刻
-          </button>
-        </div>
         <NumberField label="浮雕深度" value={config.reliefDepth} min={0.2} max={4} step={0.1} unit="mm" onChange={(reliefDepth) => setConfig({ reliefDepth })} />
         <NumberField label="缩放" value={config.reliefScale} min={20} max={110} unit="%" onChange={(reliefScale) => setConfig({ reliefScale })} />
         <NumberField label="旋转" value={config.reliefRotation} min={-180} max={180} unit="deg" onChange={(reliefRotation) => setConfig({ reliefRotation })} />
         <NumberField label="水平偏移" value={config.reliefOffsetX} min={-30} max={30} unit="mm" onChange={(reliefOffsetX) => setConfig({ reliefOffsetX })} />
         <NumberField label="垂直偏移" value={config.reliefOffsetY} min={-30} max={30} unit="mm" onChange={(reliefOffsetY) => setConfig({ reliefOffsetY })} />
+        <label className="color-row">
+          <span>浮雕颜色</span>
+          <input type="color" value={config.reliefColor} onChange={(event) => setConfig({ reliefColor: event.currentTarget.value })} />
+        </label>
+        <NumberField label="浮雕金属度" value={config.reliefMetalness} min={0} max={1} step={0.05} onChange={(reliefMetalness) => setConfig({ reliefMetalness })} />
+        <NumberField label="浮雕粗糙度" value={config.reliefRoughness} min={0.05} max={0.9} step={0.05} onChange={(reliefRoughness) => setConfig({ reliefRoughness })} />
       </section>
 
       <section className="control-section">

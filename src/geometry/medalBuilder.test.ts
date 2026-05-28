@@ -20,13 +20,13 @@ describe('buildMedalModel', () => {
     expect(Number.isFinite(model.positions[0])).toBe(true);
   });
 
-  it('changes volume when relief is raised or engraved', async () => {
+  it('adds raised SVG relief as a separate model section', async () => {
     const base = await buildMedalModel(defaultConfig, null);
-    const raised = await buildMedalModel({ ...defaultConfig, reliefMode: 'raised' }, svg);
-    const engraved = await buildMedalModel({ ...defaultConfig, reliefMode: 'engraved' }, svg);
+    const raised = await buildMedalModel(defaultConfig, svg);
 
     expect(raised.volume).toBeGreaterThan(base.volume);
-    expect(engraved.volume).toBeLessThan(base.volume);
+    expect(raised.reliefIndexStart).toBeGreaterThan(0);
+    expect(raised.reliefIndexStart).toBeLessThan(raised.indices.length);
   });
 
   it('adds raised back text and optional back SVG below it', async () => {

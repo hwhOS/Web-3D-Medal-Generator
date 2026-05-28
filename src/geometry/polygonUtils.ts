@@ -154,6 +154,68 @@ function roundedRectPolygon(width: number, height: number, radius: number, corne
   return points;
 }
 
+function cubicPoint(p0: Point2, p1: Point2, p2: Point2, p3: Point2, t: number): Point2 {
+  const u = 1 - t;
+  const tt = t * t;
+  const uu = u * u;
+  const uuu = uu * u;
+  const ttt = tt * t;
+
+  return [
+    uuu * p0[0] + 3 * uu * t * p1[0] + 3 * u * tt * p2[0] + ttt * p3[0],
+    uuu * p0[1] + 3 * uu * t * p1[1] + 3 * u * tt * p2[1] + ttt * p3[1]
+  ];
+}
+
+function appendCubic(points: Point2[], p0: Point2, p1: Point2, p2: Point2, p3: Point2, segments: number): void {
+  for (let i = 1; i <= segments; i += 1) {
+    points.push(cubicPoint(p0, p1, p2, p3, i / segments));
+  }
+}
+
+function roundedShieldPolygon(width: number, height: number, segments: number): Point2[] {
+  const topY = height * 0.42;
+  const bottomY = -height * 0.48;
+  const topHalf = width * 0.39;
+  const sideX = width * 0.43;
+  const corner = Math.min(width, height) * 0.12;
+  const cornerSegments = Math.max(8, Math.round(segments / 18));
+  const sideSegments = Math.max(18, Math.round(segments / 5));
+  const bottomSegments = Math.max(16, Math.round(segments / 6));
+
+  const start: Point2 = [-topHalf + corner, topY];
+  const topRight: Point2 = [topHalf - corner, topY];
+  const rightUpper: Point2 = [topHalf, topY - corner];
+  const rightLower: Point2 = [width * 0.31, -height * 0.33];
+  const bottom: Point2 = [0, bottomY];
+  const leftLower: Point2 = [-rightLower[0], rightLower[1]];
+  const leftUpper: Point2 = [-rightUpper[0], rightUpper[1]];
+
+  const points: Point2[] = [start, topRight];
+  appendCubic(points, topRight, [topHalf - corner * 0.18, topY], [topHalf, topY - corner * 0.18], rightUpper, cornerSegments);
+  appendCubic(
+    points,
+    rightUpper,
+    [topHalf + width * 0.035, topY - height * 0.16],
+    [sideX, -height * 0.12],
+    rightLower,
+    sideSegments
+  );
+  appendCubic(points, rightLower, [width * 0.22, -height * 0.45], [width * 0.1, bottomY], bottom, bottomSegments);
+  appendCubic(points, bottom, [-width * 0.1, bottomY], [-width * 0.22, -height * 0.45], leftLower, bottomSegments);
+  appendCubic(
+    points,
+    leftLower,
+    [-sideX, -height * 0.12],
+    [-topHalf - width * 0.035, topY - height * 0.16],
+    leftUpper,
+    sideSegments
+  );
+  appendCubic(points, leftUpper, [-topHalf, topY - corner * 0.18], [-topHalf + corner * 0.18, topY], start, cornerSegments);
+
+  return cleanPolygon(points);
+}
+
 export function medalOutlinePolygon(config: MedalConfig): Point2[] {
   const segments = Math.max(24, Math.round(config.quality));
 
@@ -175,15 +237,7 @@ export function medalOutlinePolygon(config: MedalConfig): Point2[] {
       return ensureCounterClockwise(points);
     }
     case 'shield':
-      return ensureCounterClockwise([
-        [-config.width * 0.42, config.height * 0.38],
-        [config.width * 0.42, config.height * 0.38],
-        [config.width * 0.46, config.height * 0.05],
-        [config.width * 0.28, -config.height * 0.28],
-        [0, -config.height * 0.5],
-        [-config.width * 0.28, -config.height * 0.28],
-        [-config.width * 0.46, config.height * 0.05]
-      ]);
+      return roundedShieldPolygon(config.width, config.height, segments);
     default:
       return ellipsePolygon(config.diameter / 2, config.diameter / 2, segments);
   }

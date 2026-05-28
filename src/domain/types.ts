@@ -1,7 +1,5 @@
 export type MedalShape = 'circle' | 'oval' | 'rounded-rect' | 'polygon' | 'shield';
 
-export type ReliefMode = 'raised' | 'engraved';
-
 export type MaterialPreset = 'gold' | 'silver' | 'bronze' | 'black-nickel' | 'custom';
 
 export type ExportFormat = 'stl' | 'glb' | 'usdz';
@@ -20,12 +18,14 @@ export interface MedalConfig {
   color: string;
   metalness: number;
   roughness: number;
-  reliefMode: ReliefMode;
   reliefDepth: number;
   reliefScale: number;
   reliefRotation: number;
   reliefOffsetX: number;
   reliefOffsetY: number;
+  reliefColor: string;
+  reliefMetalness: number;
+  reliefRoughness: number;
   backText: string;
   backTextSize: number;
   backMarkDepth: number;
@@ -60,6 +60,7 @@ export interface ModelBuffers {
   };
   warnings: string[];
   generatedAt: number;
+  reliefIndexStart?: number;
   markIndexStart?: number;
 }
 
