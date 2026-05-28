@@ -5,14 +5,23 @@ import {
   cleanPolygon,
   medalOutlinePolygon,
   normalizePolygonsToMedal,
+  polygonArea,
   polygonMaxRadius,
   scaledPolygon,
-  type Point2
+  type Point2,
+  type Point3
 } from './polygonUtils';
 
 interface LayeredMesh {
   positions: number[];
   indices: number[];
+}
+
+interface BaseProfile {
+  outline: Point2[];
+  topRing: Point2[];
+  topOutline: Point2[];
+  footprint: { width: number; height: number };
 }
 
 type ManifoldApi = ManifoldToplevel;
@@ -45,7 +54,21 @@ function modelFootprint(config: MedalConfig): { width: number; height: number } 
   return { width: config.width, height: config.height };
 }
 
-function buildLayeredSolidMesh(outline: Point2[], thickness: number, edgeBevel: number): LayeredMesh {
+function baseProfile(config: MedalConfig): BaseProfile {
+  const outline = cleanPolygon(medalOutlinePolygon(config));
+  const maxRadius = Math.max(1, polygonMaxRadius(outline));
+  const bevel = Math.min(config.edgeBevel, config.thickness * 0.42, maxRadius * 0.25);
+  const innerScale = bevel > 0 ? Math.max(0.65, (maxRadius - bevel) / maxRadius) : 1;
+
+  return {
+    outline,
+    topRing: scaledPolygon(outline, innerScale),
+    topOutline: scaledPolygon(outline, innerScale * 0.92),
+    footprint: modelFootprint(config)
+  };
+}
+
+function buildLayeredSolidMesh(outline: Point2[], thickness: number, edgeBevel: number, includeTopFace = true): LayeredMesh {
   const maxRadius = Math.max(1, polygonMaxRadius(outline));
   const half = thickness / 2;
   const bevel = Math.min(edgeBevel, thickness * 0.42, maxRadius * 0.25);
@@ -76,18 +99,20 @@ function buildLayeredSolidMesh(outline: Point2[], thickness: number, edgeBevel: 
 
   const bottomCenterIndex = positions.length / 3;
   positions.push(0, 0, layers[0].z);
-  const topCenterIndex = positions.length / 3;
-  positions.push(0, 0, layers.at(-1)!.z);
 
   for (let i = 0; i < ringSize; i += 1) {
     const next = (i + 1) % ringSize;
     indices.push(bottomCenterIndex, next, i);
   }
 
-  const topOffset = (layers.length - 1) * ringSize;
-  for (let i = 0; i < ringSize; i += 1) {
-    const next = (i + 1) % ringSize;
-    indices.push(topCenterIndex, topOffset + i, topOffset + next);
+  if (includeTopFace) {
+    const topCenterIndex = positions.length / 3;
+    positions.push(0, 0, layers.at(-1)!.z);
+    const topOffset = (layers.length - 1) * ringSize;
+    for (let i = 0; i < ringSize; i += 1) {
+      const next = (i + 1) % ringSize;
+      indices.push(topCenterIndex, topOffset + i, topOffset + next);
+    }
   }
 
   for (let layerIndex = 0; layerIndex < layers.length - 1; layerIndex += 1) {
@@ -101,6 +126,98 @@ function buildLayeredSolidMesh(outline: Point2[], thickness: number, edgeBevel: 
   }
 
   return { positions, indices };
+}
+
+function addVertex(mesh: LayeredMesh, point: Point3): number {
+  const index = mesh.positions.length / 3;
+  mesh.positions.push(point[0], point[1], point[2]);
+  return index;
+}
+
+function addTriangle(mesh: LayeredMesh, a: Point3, b: Point3, c: Point3): void {
+  mesh.indices.push(addVertex(mesh, a), addVertex(mesh, b), addVertex(mesh, c));
+}
+
+function addFlatTriangle(mesh: LayeredMesh, a: Point2, b: Point2, c: Point2, z: number, normal: 'up' | 'down'): void {
+  const area = polygonArea([a, b, c]);
+  const points: [Point2, Point2, Point2] = (area > 0) === (normal === 'up') ? [a, b, c] : [a, c, b];
+  addTriangle(mesh, [points[0][0], points[0][1], z], [points[1][0], points[1][1], z], [points[2][0], points[2][1], z]);
+}
+
+function flattenPolygons(polygons: Point2[][]): Point2[] {
+  return polygons.flatMap((polygon) => polygon);
+}
+
+function addTriangulatedSurface(
+  mesh: LayeredMesh,
+  polygons: Point2[][],
+  z: number,
+  normal: 'up' | 'down',
+  api: ManifoldApi
+): void {
+  const points = flattenPolygons(polygons);
+  if (points.length < 3) {
+    return;
+  }
+
+  for (const [a, b, c] of api.triangulate(polygons)) {
+    addFlatTriangle(mesh, points[a], points[b], points[c], z, normal);
+  }
+}
+
+function triangulatedArea(polygons: Point2[][], api: ManifoldApi): number {
+  const points = flattenPolygons(polygons);
+  let area = 0;
+  for (const [a, b, c] of api.triangulate(polygons)) {
+    area += Math.abs(polygonArea([points[a], points[b], points[c]]));
+  }
+  return area;
+}
+
+function addEngravingWalls(mesh: LayeredMesh, contours: Point2[][], topZ: number, floorZ: number): void {
+  for (const contour of contours) {
+    const isCounterClockwise = polygonArea(contour) > 0;
+    for (let i = 0; i < contour.length; i += 1) {
+      const a = contour[i];
+      const b = contour[(i + 1) % contour.length];
+      const topA: Point3 = [a[0], a[1], topZ];
+      const topB: Point3 = [b[0], b[1], topZ];
+      const floorA: Point3 = [a[0], a[1], floorZ];
+      const floorB: Point3 = [b[0], b[1], floorZ];
+
+      if (isCounterClockwise) {
+        addTriangle(mesh, topA, topB, floorB);
+        addTriangle(mesh, topA, floorB, floorA);
+      } else {
+        addTriangle(mesh, topA, floorB, topB);
+        addTriangle(mesh, topA, floorA, floorB);
+      }
+    }
+  }
+}
+
+function engravingDepth(config: MedalConfig): number {
+  return Math.min(Math.max(0.1, config.reliefDepth), config.thickness * 0.72);
+}
+
+function buildLayeredEngravedMesh(
+  outline: Point2[],
+  topRing: Point2[],
+  topFacePolygons: Point2[][],
+  engravingPolygons: Point2[][],
+  config: MedalConfig,
+  api: ManifoldApi
+): LayeredMesh {
+  const mesh = buildLayeredSolidMesh(outline, config.thickness, config.edgeBevel, false);
+  const topZ = config.thickness / 2;
+  const floorZ = topZ - engravingDepth(config);
+  const topFace = topFacePolygons.length ? topFacePolygons : [topRing];
+
+  addTriangulatedSurface(mesh, topFace, topZ, 'up', api);
+  addTriangulatedSurface(mesh, engravingPolygons, floorZ, 'up', api);
+  addEngravingWalls(mesh, engravingPolygons, topZ, floorZ);
+
+  return mesh;
 }
 
 function meshToManifold(meshData: LayeredMesh, api: ManifoldApi): ManifoldInstance {
@@ -123,22 +240,17 @@ function meshToManifold(meshData: LayeredMesh, api: ManifoldApi): ManifoldInstan
 function makeBase(
   config: MedalConfig,
   api: ManifoldApi
-): {
+): BaseProfile & {
   solid: ManifoldInstance;
-  topOutline: Point2[];
-  footprint: { width: number; height: number };
 } {
-  const outline = cleanPolygon(medalOutlinePolygon(config));
+  const profile = baseProfile(config);
+  const { outline } = profile;
   const meshData = buildLayeredSolidMesh(outline, config.thickness, config.edgeBevel);
   const solid = meshToManifold(meshData, api);
-  const maxRadius = Math.max(1, polygonMaxRadius(outline));
-  const topScale =
-    config.edgeBevel > 0.05 ? Math.max(0.65, (maxRadius - Math.min(config.edgeBevel, maxRadius * 0.25)) / maxRadius) : 1;
 
   return {
     solid,
-    topOutline: scaledPolygon(outline, topScale * 0.92),
-    footprint: modelFootprint(config)
+    ...profile
   };
 }
 
@@ -202,15 +314,6 @@ function makeRaisedRelief(
     .translate([0, 0, baseTop - contactInset]);
 }
 
-function makeEngravingCutter(crossSection: CrossSectionInstance, config: MedalConfig): ManifoldInstance {
-  const overlap = 0.08;
-  const reliefDepth = Math.max(0.1, config.reliefDepth);
-  const cutterHeight = reliefDepth + overlap * 2;
-  return crossSection
-    .extrude(cutterHeight, 0, 0, 1, true)
-    .translate([0, 0, config.thickness / 2 - reliefDepth / 2]);
-}
-
 function meshToBuffers(manifolds: ManifoldInstance[], warnings: string[]): ModelBuffers {
   const positions: number[] = [];
   const indices: number[] = [];
@@ -259,16 +362,115 @@ function meshToBuffers(manifolds: ManifoldInstance[], warnings: string[]): Model
   };
 }
 
+function meshDataToBuffers(mesh: LayeredMesh, warnings: string[], volumeOverride?: number): ModelBuffers {
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  let signedVolume = 0;
+  let surfaceArea = 0;
+
+  for (let i = 0; i < mesh.positions.length; i += 3) {
+    const x = mesh.positions[i];
+    const y = mesh.positions[i + 1];
+    const z = mesh.positions[i + 2];
+    min[0] = Math.min(min[0], x);
+    min[1] = Math.min(min[1], y);
+    min[2] = Math.min(min[2], z);
+    max[0] = Math.max(max[0], x);
+    max[1] = Math.max(max[1], y);
+    max[2] = Math.max(max[2], z);
+  }
+
+  for (let i = 0; i < mesh.indices.length; i += 3) {
+    const ia = mesh.indices[i] * 3;
+    const ib = mesh.indices[i + 1] * 3;
+    const ic = mesh.indices[i + 2] * 3;
+    const ax = mesh.positions[ia];
+    const ay = mesh.positions[ia + 1];
+    const az = mesh.positions[ia + 2];
+    const bx = mesh.positions[ib];
+    const by = mesh.positions[ib + 1];
+    const bz = mesh.positions[ib + 2];
+    const cx = mesh.positions[ic];
+    const cy = mesh.positions[ic + 1];
+    const cz = mesh.positions[ic + 2];
+    const abx = bx - ax;
+    const aby = by - ay;
+    const abz = bz - az;
+    const acx = cx - ax;
+    const acy = cy - ay;
+    const acz = cz - az;
+    const crossX = aby * acz - abz * acy;
+    const crossY = abz * acx - abx * acz;
+    const crossZ = abx * acy - aby * acx;
+
+    surfaceArea += Math.hypot(crossX, crossY, crossZ) / 2;
+    signedVolume += (ax * (by * cz - bz * cy) + ay * (bz * cx - bx * cz) + az * (bx * cy - by * cx)) / 6;
+  }
+
+  return {
+    positions: new Float32Array(mesh.positions),
+    indices: new Uint32Array(mesh.indices),
+    vertexCount: mesh.positions.length / 3,
+    triangleCount: mesh.indices.length / 3,
+    volume: volumeOverride ?? Math.abs(signedVolume),
+    surfaceArea,
+    bounds: { min, max },
+    warnings,
+    generatedAt: Date.now()
+  };
+}
+
+function cleanedPolygons(polygons: Point2[][]): Point2[][] {
+  return polygons.map((polygon) => cleanPolygon(polygon, 0.00001)).filter((polygon) => polygon.length >= 3);
+}
+
+function makeEngravedBuffers(
+  profile: BaseProfile,
+  crossSection: CrossSectionInstance,
+  config: MedalConfig,
+  warnings: string[],
+  baseVolume: number,
+  api: ManifoldApi
+): ModelBuffers | null {
+  const topSurface = api.CrossSection.ofPolygons([profile.topRing], 'Positive');
+  const engraving = crossSection.intersect(topSurface).simplify(0.02);
+
+  if (engraving.isEmpty()) {
+    topSurface.delete();
+    engraving.delete();
+    return null;
+  }
+
+  const remainingTop = topSurface.subtract(engraving).simplify(0.02);
+  const topFacePolygons = cleanedPolygons(remainingTop.toPolygons() as Point2[][]);
+  const engravingPolygons = cleanedPolygons(engraving.toPolygons() as Point2[][]);
+
+  topSurface.delete();
+  remainingTop.delete();
+  engraving.delete();
+
+  if (engravingPolygons.length === 0) {
+    return null;
+  }
+
+  const removedVolume = triangulatedArea(engravingPolygons, api) * engravingDepth(config);
+  const volume = Math.max(0, baseVolume - removedVolume);
+  const mesh = buildLayeredEngravedMesh(profile.outline, profile.topRing, topFacePolygons, engravingPolygons, config, api);
+
+  return meshDataToBuffers(mesh, warnings, volume);
+}
+
 export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometry | null, wasmUrl?: string): Promise<ModelBuffers> {
   const api = await getManifoldApi(wasmUrl);
   const warnings: string[] = [];
-  const { solid: baseSolid, topOutline, footprint } = makeBase(config, api);
+  const { solid: baseSolid, ...profile } = makeBase(config, api);
   let result: ManifoldInstance = baseSolid;
   let raisedRelief: ManifoldInstance | null = null;
+  let engravedModel: ModelBuffers | null = null;
 
   try {
     if (svg?.polygons.length) {
-      const { crossSection, warnings: svgWarnings } = makeReliefCrossSection(svg, config, topOutline, footprint, api);
+      const { crossSection, warnings: svgWarnings } = makeReliefCrossSection(svg, config, profile.topOutline, profile.footprint, api);
       warnings.push(...svgWarnings);
 
       if (crossSection) {
@@ -276,13 +478,16 @@ export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometr
           // Keep raised artwork as its own shell to avoid CSG remeshing artifacts on the medal face.
           raisedRelief = makeRaisedRelief(crossSection, config);
         } else {
-          const cutter = makeEngravingCutter(crossSection, config);
-          result = result.subtract(cutter);
-          cutter.delete();
+          // Build engraved grooves directly instead of using CSG subtraction, which creates visible long-triangle artifacts.
+          engravedModel = makeEngravedBuffers(profile, crossSection, config, warnings, baseSolid.volume(), api);
         }
 
         crossSection.delete();
       }
+    }
+
+    if (engravedModel) {
+      return engravedModel;
     }
 
     const outputSolids = result === baseSolid && raisedRelief ? [baseSolid, raisedRelief] : [result];
