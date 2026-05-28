@@ -34,7 +34,7 @@ describe('ControlPanel', () => {
     fireEvent.change(screen.getByLabelText('Back Sample'), { target: { value: 'star' } });
 
     expect(useMedalStore.getState().svg?.fileName).toBe('apple-logo.svg');
-    expect(useMedalStore.getState().backSvg?.fileName).toBe('star-medal.svg');
+    expect(useMedalStore.getState().backSvg?.fileName).toBe('compass-rose.svg');
   });
 
   it('can switch the interface to Chinese', () => {

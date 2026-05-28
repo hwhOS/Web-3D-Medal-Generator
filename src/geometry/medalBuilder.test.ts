@@ -44,4 +44,45 @@ describe('buildMedalModel', () => {
     expect(marked.triangleCount).toBeGreaterThan(base.triangleCount);
     expect(marked.bounds.min[2]).toBeLessThan(base.bounds.min[2]);
   });
+
+  it('keeps offset back SVG bevels centered on the SVG artwork', async () => {
+    const marked = await buildMedalModel(
+      {
+        ...defaultConfig,
+        backText: '',
+        backLogoOffsetY: -14,
+        backMarkDepth: 1
+      },
+      null,
+      svg
+    );
+    const markStart = marked.markIndexStart ?? marked.indices.length;
+    const markVertexIds = new Set<number>();
+
+    for (let i = markStart; i < marked.indices.length; i += 1) {
+      markVertexIds.add(marked.indices[i]);
+    }
+
+    const vertices = Array.from(markVertexIds).map((vertexId) => ({
+      x: marked.positions[vertexId * 3],
+      y: marked.positions[vertexId * 3 + 1],
+      z: marked.positions[vertexId * 3 + 2]
+    }));
+    const minZ = Math.min(...vertices.map((point) => point.z));
+    const maxZ = Math.max(...vertices.map((point) => point.z));
+    const centroidAtZ = (z: number) => {
+      const points = vertices.filter((point) => Math.abs(point.z - z) < 0.005);
+      expect(points.length).toBeGreaterThan(0);
+      return points.reduce(
+        (sum, point) => ({ x: sum.x + point.x / points.length, y: sum.y + point.y / points.length }),
+        { x: 0, y: 0 }
+      );
+    };
+
+    const outerFace = centroidAtZ(minZ);
+    const contactFace = centroidAtZ(maxZ);
+
+    expect(outerFace.x).toBeCloseTo(contactFace.x, 1);
+    expect(outerFace.y).toBeCloseTo(contactFace.y, 1);
+  });
 });

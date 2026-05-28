@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { defaultConfig } from '../domain/defaults';
 import type { ExportFormat, ModelBuffers } from '../domain/types';
-import { createExportBlob, exportFileName } from './exporters';
+import { createExportBlob, createMedalGeometry, exportFileName } from './exporters';
 
 vi.mock('three/addons/exporters/STLExporter.js', () => ({
   STLExporter: class {
@@ -45,5 +45,15 @@ describe('exporters', () => {
 
     expect(blob.size).toBeGreaterThan(0);
     expect(exportFileName(format)).toMatch(new RegExp(`\\.${format}$`));
+  });
+
+  it('can bake export scale into geometry vertices', () => {
+    const geometry = createMedalGeometry(model, 'all', 0.1);
+    const position = geometry.getAttribute('position');
+
+    expect(position.getX(1)).toBeCloseTo(0.1);
+    expect(position.getY(2)).toBeCloseTo(0.1);
+
+    geometry.dispose();
   });
 });

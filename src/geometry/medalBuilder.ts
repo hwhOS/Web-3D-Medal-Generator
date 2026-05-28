@@ -450,15 +450,20 @@ function makeBackSvgMesh(
     return null;
   }
 
+  const normalizedBounds = bounds2(normalized);
+  const centerX = normalizedBounds ? (normalizedBounds.min[0] + normalizedBounds.max[0]) / 2 : 0;
+  const centerY = normalizedBounds ? (normalizedBounds.min[1] + normalizedBounds.max[1]) / 2 : 0;
   const depth = Math.min(Math.max(0.05, config.backMarkDepth), config.thickness * 0.28);
   const contactInset = 0.035;
   const bevelScale = Math.max(0.94, 1 - depth * 0.08);
-  const solid = clipped
+  const centered = clipped.translate([-centerX, -centerY]);
+  const solid = centered
     .extrude(depth + contactInset, 1, 0, [bevelScale, bevelScale], false)
     .scale([1, 1, -1])
-    .translate([0, 0, -config.thickness / 2 + contactInset]);
+    .translate([centerX, centerY, -config.thickness / 2 + contactInset]);
   const mesh = meshFromManifold(solid);
 
+  centered.delete();
   clipped.delete();
   solid.delete();
 

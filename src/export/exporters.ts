@@ -29,6 +29,19 @@ export function hasReliefGeometry(model: ModelBuffers): boolean {
 
 type GeometrySection = 'all' | 'base' | 'relief' | 'mark';
 
+function modelMaxDimension(model: ModelBuffers): number {
+  return Math.max(
+    model.bounds.max[0] - model.bounds.min[0],
+    model.bounds.max[1] - model.bounds.min[1],
+    model.bounds.max[2] - model.bounds.min[2]
+  );
+}
+
+function usdzUnitScale(model: ModelBuffers): number {
+  const maxDimension = modelMaxDimension(model);
+  return maxDimension > 0 ? 0.1 / maxDimension : 0.001;
+}
+
 function geometryRange(model: ModelBuffers, section: GeometrySection): [number, number] {
   const markStart = model.markIndexStart ?? model.indices.length;
   const reliefStart = model.reliefIndexStart ?? markStart;
@@ -48,9 +61,15 @@ function geometryRange(model: ModelBuffers, section: GeometrySection): [number, 
   return [0, model.indices.length];
 }
 
-export function createMedalGeometry(model: ModelBuffers, section: GeometrySection = 'all'): BufferGeometry {
+export function createMedalGeometry(model: ModelBuffers, section: GeometrySection = 'all', unitScale = 1): BufferGeometry {
   const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new BufferAttribute(model.positions.slice(), 3));
+  const positions = model.positions.slice();
+  if (unitScale !== 1) {
+    for (let i = 0; i < positions.length; i += 1) {
+      positions[i] *= unitScale;
+    }
+  }
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
   const [start, end] = geometryRange(model, section);
   geometry.setIndex(new BufferAttribute(model.indices.slice(start, end), 1));
   const creased = toCreasedNormals(geometry, Math.PI / 9);
@@ -88,22 +107,19 @@ function createExportObject(model: ModelBuffers, config: MedalConfig, unitScale:
   const scene = new Scene();
   scene.name = 'medal-export';
 
-  const medalMesh = new Mesh(createMedalGeometry(model, 'base'), createMaterial(config));
+  const medalMesh = new Mesh(createMedalGeometry(model, 'base', unitScale), createMaterial(config));
   medalMesh.name = 'custom-medal';
-  medalMesh.scale.setScalar(unitScale);
   scene.add(medalMesh);
 
   if (hasReliefGeometry(model)) {
-    const reliefMesh = new Mesh(createMedalGeometry(model, 'relief'), createReliefMaterial(config));
+    const reliefMesh = new Mesh(createMedalGeometry(model, 'relief', unitScale), createReliefMaterial(config));
     reliefMesh.name = 'front-relief';
-    reliefMesh.scale.setScalar(unitScale);
     scene.add(reliefMesh);
   }
 
   if (hasBackMarkGeometry(model)) {
-    const markMesh = new Mesh(createMedalGeometry(model, 'mark'), createBackMarkMaterial(config));
+    const markMesh = new Mesh(createMedalGeometry(model, 'mark', unitScale), createBackMarkMaterial(config));
     markMesh.name = 'back-markings';
-    markMesh.scale.setScalar(unitScale);
     scene.add(markMesh);
   }
 
@@ -132,7 +148,7 @@ export async function createExportBlob(format: ExportFormat, model: ModelBuffers
 
   const { USDZExporter } = await import('three/addons/exporters/USDZExporter.js');
   const exporter = new USDZExporter();
-  const payload = await exporter.parseAsync(createExportObject(model, config, 0.001), {
+  const payload = await exporter.parseAsync(createExportObject(model, config, usdzUnitScale(model)), {
     quickLookCompatible: true
   });
   return new Blob([payload], { type: 'model/vnd.usdz+zip' });

@@ -19,33 +19,33 @@ export const svgSamples: SvgSample[] = [
   },
   {
     id: 'star',
-    fileName: 'star-medal.svg',
-    label: { en: 'Five Point Star', zh: '五角星' },
-    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 6 61.4 37.2 94 38.2 68.2 58.5 77.3 90 50 72.1 22.7 90 31.8 58.5 6 38.2 38.6 37.2Z"/></svg>'
+    fileName: 'compass-rose.svg',
+    label: { en: 'Compass Rose', zh: '罗盘星芒' },
+    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><path d="M80 8 91 55 128 32 105 69 152 80 105 91 128 128 91 105 80 152 69 105 32 128 55 91 8 80 55 69 32 32 69 55Z"/><path d="M80 36 88 70 122 80 88 90 80 124 72 90 38 80 72 70Z"/><path d="M80 57 87 73 103 80 87 87 80 103 73 87 57 80 73 73Z"/><circle cx="80" cy="80" r="7"/></svg>'
   },
   {
     id: 'laurel',
     fileName: 'laurel-wreath.svg',
     label: { en: 'Laurel Wreath', zh: '月桂花环' },
-    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><g><ellipse cx="34" cy="88" rx="8" ry="17" transform="rotate(-38 34 88)"/><ellipse cx="26" cy="70" rx="7" ry="15" transform="rotate(-55 26 70)"/><ellipse cx="27" cy="51" rx="6" ry="14" transform="rotate(-70 27 51)"/><ellipse cx="36" cy="34" rx="6" ry="13" transform="rotate(-30 36 34)"/><ellipse cx="86" cy="88" rx="8" ry="17" transform="rotate(38 86 88)"/><ellipse cx="94" cy="70" rx="7" ry="15" transform="rotate(55 94 70)"/><ellipse cx="93" cy="51" rx="6" ry="14" transform="rotate(70 93 51)"/><ellipse cx="84" cy="34" rx="6" ry="13" transform="rotate(30 84 34)"/><path d="M60 20 68 44 94 44 73 59 81 84 60 69 39 84 47 59 26 44 52 44Z"/></g></svg>'
+    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><path d="M88 30 96 54 121 54 101 69 109 94 88 79 67 94 75 69 55 54 80 54Z"/><path d="M42 132c-13-24-12-56 5-79l5 4c-15 21-16 50-4 72Z"/><path d="M138 132c13-24 12-56-5-79l-5 4c15 21 16 50 4 72Z"/><ellipse cx="48" cy="124" rx="9" ry="20" transform="rotate(-43 48 124)"/><ellipse cx="39" cy="104" rx="8" ry="18" transform="rotate(-58 39 104)"/><ellipse cx="38" cy="82" rx="8" ry="17" transform="rotate(-76 38 82)"/><ellipse cx="46" cy="61" rx="7" ry="16" transform="rotate(-116 46 61)"/><ellipse cx="58" cy="44" rx="7" ry="15" transform="rotate(-135 58 44)"/><ellipse cx="132" cy="124" rx="9" ry="20" transform="rotate(43 132 124)"/><ellipse cx="141" cy="104" rx="8" ry="18" transform="rotate(58 141 104)"/><ellipse cx="142" cy="82" rx="8" ry="17" transform="rotate(76 142 82)"/><ellipse cx="134" cy="61" rx="7" ry="16" transform="rotate(116 134 61)"/><ellipse cx="122" cy="44" rx="7" ry="15" transform="rotate(135 122 44)"/><path d="M67 126h46l-9 12 9 12H67l9-12Z"/></svg>'
   },
   {
     id: 'bolt',
-    fileName: 'lightning-bolt.svg',
-    label: { en: 'Lightning Bolt', zh: '闪电' },
-    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M56 4 18 56h28L36 96 82 40H54Z"/></svg>'
+    fileName: 'circuit-bolt.svg',
+    label: { en: 'Circuit Bolt', zh: '电路闪电' },
+    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><path d="M91 10 34 88h42l-16 62 68-88H88Z"/><path d="M24 28h34v10H34v28H24Z"/><path d="M112 24h24v44h-10V34h-14Z"/><path d="M22 119h34v10H32v15H22Z"/><path d="M113 110h25v11h-15v17h-10Z"/><circle cx="24" cy="28" r="8"/><circle cx="136" cy="24" r="8"/><circle cx="22" cy="144" r="8"/><circle cx="138" cy="138" r="8"/><circle cx="80" cy="82" r="9"/></svg>'
   },
   {
     id: 'mountain',
-    fileName: 'mountain-badge.svg',
-    label: { en: 'Mountain Badge', zh: '山峰徽章' },
-    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><path d="M12 88 43 34 58 60 72 42 108 88Z"/><path d="M43 34 55 55 48 52 39 61 33 58Z"/><path d="M72 42 85 64 75 58 67 65 62 62Z"/></svg>'
+    fileName: 'alpine-emblem.svg',
+    label: { en: 'Alpine Emblem', zh: '山峰徽章' },
+    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><circle cx="138" cy="42" r="14"/><path d="M18 128 57 62 76 94 96 48 162 128Z"/><path d="M57 62 72 87 63 83 53 95 45 90Z"/><path d="M96 48 116 83 103 77 91 94 82 88Z"/><path d="M28 143c16-9 30-9 46 0s30 9 46 0 24-9 34-4v12c-12-5-21-4-34 4-16 9-30 9-46 0s-30-9-46 0Z"/><path d="M38 156c12-5 24-4 37 3s26 7 39 0 23-8 30-5v10c-9-2-17 0-27 5-15 7-30 7-45 0-11-5-21-7-34-3Z"/></svg>'
   },
   {
     id: 'crest',
-    fileName: 'shield-crest.svg',
-    label: { en: 'Shield Crest', zh: '盾徽' },
-    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><path d="M60 8 96 22v30c0 29-16 49-36 60-20-11-36-31-36-60V22Z"/><path d="M60 24 68 49h26L73 64l8 25-21-15-21 15 8-25-21-15h26Z"/></svg>'
+    fileName: 'crowned-crest.svg',
+    label: { en: 'Crowned Crest', zh: '皇冠盾徽' },
+    text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><path d="M48 48 90 30l42 18v38c0 32-18 56-42 70-24-14-42-38-42-70Z"/><path d="M50 36 66 18 82 35 90 16 98 35 114 18 130 36v13H50Z"/><path d="M70 68h40v13H70Z"/><path d="M72 93h36v13H72Z"/><path d="M90 55 98 78 122 79 103 94 110 118 90 104 70 118 77 94 58 79 82 78Z"/><path d="M58 134h64v10H58Z"/></svg>'
   }
 ];
 
