@@ -40,35 +40,41 @@ export function App() {
     <main className="app-shell">
       <ControlPanel />
       <section className="workspace">
-        <div className="preview-header">
-          <div>
-            <p>{t.preview.eyebrow}</p>
-            <h2>{t.preview.title}</h2>
-          </div>
-          <div className="preview-actions">
-            <div className="view-controls" role="group" aria-label={t.preview.title}>
-              {viewOptions.map(({ value, icon: Icon }) => (
-                <button
-                  key={value}
-                  className={previewView === value ? 'view-button is-selected' : 'view-button'}
-                  type="button"
-                  onClick={() => {
-                    setPreviewView(value);
-                    setPreviewViewRequest((request) => request + 1);
-                  }}
-                  title={t.views[value]}
-                  aria-pressed={previewView === value}
-                >
-                  <Icon size={15} />
-                  <span>{t.views[value]}</span>
-                </button>
-              ))}
+        <div className="preview-layout">
+          <div className="preview-main">
+            <div className="preview-header">
+              <div>
+                <p>{t.preview.eyebrow}</p>
+                <h2>{t.preview.title}</h2>
+              </div>
+              <div className="preview-actions">
+                <div className="view-controls" role="group" aria-label={t.preview.title}>
+                  {viewOptions.map(({ value, icon: Icon }) => (
+                    <button
+                      key={value}
+                      className={previewView === value ? 'view-button is-selected' : 'view-button'}
+                      type="button"
+                      onClick={() => {
+                        setPreviewView(value);
+                        setPreviewViewRequest((request) => request + 1);
+                      }}
+                      title={t.views[value]}
+                      aria-pressed={previewView === value}
+                    >
+                      <Icon size={15} />
+                      <span>{t.views[value]}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="view-hint">{t.preview.hint}</div>
+              </div>
             </div>
-            <div className="view-hint">{t.preview.hint}</div>
+            <PreviewScene model={model} config={config} view={previewView} viewRequest={previewViewRequest} themeMode={themeMode} />
+          </div>
+          <div className="preview-sidebar">
+            <ExportPanel status={status} model={model} config={config} error={error} language={language} />
           </div>
         </div>
-        <PreviewScene model={model} config={config} view={previewView} viewRequest={previewViewRequest} themeMode={themeMode} />
-        <ExportPanel status={status} model={model} config={config} error={error} language={language} />
       </section>
     </main>
   );
