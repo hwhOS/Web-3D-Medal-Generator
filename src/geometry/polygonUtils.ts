@@ -173,45 +173,51 @@ function appendCubic(points: Point2[], p0: Point2, p1: Point2, p2: Point2, p3: P
   }
 }
 
+function appendArc(points: Point2[], center: Point2, radius: number, startAngle: number, endAngle: number, segments: number): void {
+  for (let i = 1; i <= segments; i += 1) {
+    const theta = startAngle + ((endAngle - startAngle) * i) / segments;
+    points.push([center[0] + Math.cos(theta) * radius, center[1] + Math.sin(theta) * radius]);
+  }
+}
+
 function roundedShieldPolygon(width: number, height: number, segments: number): Point2[] {
   const topY = height * 0.42;
-  const bottomY = -height * 0.48;
+  const bottomY = -height * 0.47;
   const topHalf = width * 0.39;
-  const sideX = width * 0.43;
   const corner = Math.min(width, height) * 0.12;
   const cornerSegments = Math.max(8, Math.round(segments / 18));
-  const sideSegments = Math.max(18, Math.round(segments / 5));
+  const sideSegments = Math.max(20, Math.round(segments / 5));
   const bottomSegments = Math.max(16, Math.round(segments / 6));
 
   const start: Point2 = [-topHalf + corner, topY];
   const topRight: Point2 = [topHalf - corner, topY];
   const rightUpper: Point2 = [topHalf, topY - corner];
-  const rightLower: Point2 = [width * 0.31, -height * 0.33];
+  const rightMid: Point2 = [width * 0.4, -height * 0.1];
   const bottom: Point2 = [0, bottomY];
-  const leftLower: Point2 = [-rightLower[0], rightLower[1]];
+  const leftMid: Point2 = [-rightMid[0], rightMid[1]];
   const leftUpper: Point2 = [-rightUpper[0], rightUpper[1]];
 
   const points: Point2[] = [start, topRight];
-  appendCubic(points, topRight, [topHalf - corner * 0.18, topY], [topHalf, topY - corner * 0.18], rightUpper, cornerSegments);
+  appendArc(points, [topHalf - corner, topY - corner], corner, Math.PI / 2, 0, cornerSegments);
   appendCubic(
     points,
     rightUpper,
-    [topHalf + width * 0.035, topY - height * 0.16],
-    [sideX, -height * 0.12],
-    rightLower,
+    [topHalf, topY - corner - height * 0.18],
+    [width * 0.4, height * 0.1],
+    rightMid,
     sideSegments
   );
-  appendCubic(points, rightLower, [width * 0.22, -height * 0.45], [width * 0.1, bottomY], bottom, bottomSegments);
-  appendCubic(points, bottom, [-width * 0.1, bottomY], [-width * 0.22, -height * 0.45], leftLower, bottomSegments);
+  appendCubic(points, rightMid, [width * 0.4, -height * 0.32], [width * 0.2, bottomY], bottom, bottomSegments);
+  appendCubic(points, bottom, [-width * 0.2, bottomY], [-width * 0.4, -height * 0.32], leftMid, bottomSegments);
   appendCubic(
     points,
-    leftLower,
-    [-sideX, -height * 0.12],
-    [-topHalf - width * 0.035, topY - height * 0.16],
+    leftMid,
+    [-width * 0.4, height * 0.1],
+    [-topHalf, topY - corner - height * 0.18],
     leftUpper,
     sideSegments
   );
-  appendCubic(points, leftUpper, [-topHalf, topY - corner * 0.18], [-topHalf + corner * 0.18, topY], start, cornerSegments);
+  appendArc(points, [-topHalf + corner, topY - corner], corner, Math.PI, Math.PI / 2, cornerSegments);
 
   return cleanPolygon(points);
 }

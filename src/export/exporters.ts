@@ -71,8 +71,8 @@ function createMaterial(config: MedalConfig): Material {
 function createBackMarkMaterial(config: MedalConfig): Material {
   return new MeshStandardMaterial({
     color: new Color(config.backMarkColor),
-    metalness: 0.08,
-    roughness: 0.38
+    metalness: config.backMarkMetalness,
+    roughness: config.backMarkRoughness
   });
 }
 

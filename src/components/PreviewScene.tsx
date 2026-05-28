@@ -23,7 +23,7 @@ function MedalMesh({ model, config }: { model: ModelBuffers; config: MedalConfig
       )}
       {markGeometry && (
         <mesh geometry={markGeometry} castShadow receiveShadow>
-          <meshStandardMaterial color={config.backMarkColor} metalness={0.08} roughness={0.38} />
+          <meshStandardMaterial color={config.backMarkColor} metalness={config.backMarkMetalness} roughness={config.backMarkRoughness} />
         </mesh>
       )}
     </group>

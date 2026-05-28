@@ -129,7 +129,8 @@ button:disabled {
 
 .choice.is-selected,
 .material-choice.is-selected,
-.segmented .is-selected {
+.segmented .is-selected,
+.language-toggle .is-selected {
   border-color: #b9882d;
   background: #fff7df;
   box-shadow: inset 0 0 0 1px #d6a33c;
@@ -223,6 +224,23 @@ button:disabled {
   margin-top: 8px;
   padding: 7px 10px;
   color: #705319;
+}
+
+.language-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #ebe4d7;
+}
+
+.language-toggle button {
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #2c2a26;
 }
 
 .segmented {

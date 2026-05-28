@@ -9,6 +9,8 @@ A browser-based 3D medal generator that turns uploaded SVG artwork into raised m
 - Adjust relief depth, scale, rotation, and X/Y placement.
 - Choose metallic material presets or custom color, metalness, and roughness for the base medal.
 - Customize the raised SVG relief color, metalness, and roughness separately.
+- Add raised back text and an optional small back SVG with separate color, metalness, and roughness controls.
+- Switch the interface between English and Chinese; English is the default.
 - Preview the generated medal in an interactive Three.js scene.
 - Export models as:
   - STL for 3D printing.

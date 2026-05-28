@@ -13,15 +13,16 @@ import {
 } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 import { materialPresets } from '../domain/materials';
-import type { MedalShape } from '../domain/types';
+import type { MaterialPreset, MedalShape } from '../domain/types';
+import { copy } from '../i18n';
 import { useMedalStore } from '../store/useMedalStore';
 
-const shapeOptions: Array<{ value: MedalShape; label: string; icon: typeof Circle }> = [
-  { value: 'circle', label: '圆形', icon: Circle },
-  { value: 'oval', label: '椭圆', icon: Circle },
-  { value: 'rounded-rect', label: '圆角矩形', icon: SquareRoundCorner },
-  { value: 'polygon', label: '多边形', icon: Hexagon },
-  { value: 'shield', label: '盾形', icon: Shield }
+const shapeOptions: Array<{ value: MedalShape; icon: typeof Circle }> = [
+  { value: 'circle', icon: Circle },
+  { value: 'oval', icon: Circle },
+  { value: 'rounded-rect', icon: SquareRoundCorner },
+  { value: 'polygon', icon: Hexagon },
+  { value: 'shield', icon: Shield }
 ];
 
 function NumberField({
@@ -63,7 +64,8 @@ function NumberField({
 }
 
 export function ControlPanel() {
-  const { config, svg, backSvg, setConfig, setMaterialPreset, setSvg, setBackSvg, reset } = useMedalStore();
+  const { config, svg, backSvg, language, setConfig, setMaterialPreset, setLanguage, setSvg, setBackSvg, reset } = useMedalStore();
+  const t = copy[language];
 
   const readSvgUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -95,44 +97,55 @@ export function ControlPanel() {
   };
 
   return (
-    <aside className="control-panel" aria-label="奖牌参数">
+    <aside className="control-panel" aria-label={t.controlAria}>
       <div className="panel-title">
         <Box size={20} />
         <div>
-          <h1>奖牌生成器</h1>
-          <p>SVG 浮雕到 3D 奖牌模型</p>
+          <h1>{t.appTitle}</h1>
+          <p>{t.appSubtitle}</p>
         </div>
+      </div>
+      <div className="language-toggle" role="group" aria-label={t.language}>
+        <button className={language === 'en' ? 'is-selected' : ''} type="button" onClick={() => setLanguage('en')}>
+          EN
+        </button>
+        <button className={language === 'zh' ? 'is-selected' : ''} type="button" onClick={() => setLanguage('zh')}>
+          中文
+        </button>
       </div>
 
       <section className="control-section">
         <div className="section-title">
           <Pentagon size={16} />
-          <h2>形状</h2>
+          <h2>{t.sections.shape}</h2>
         </div>
         <div className="shape-grid">
-          {shapeOptions.map(({ value, label, icon: Icon }) => (
-            <button
-              className={config.shape === value ? 'choice is-selected' : 'choice'}
-              key={value}
-              type="button"
-              onClick={() => setConfig({ shape: value })}
-              title={label}
-            >
-              <Icon size={17} />
-              <span>{label}</span>
-            </button>
-          ))}
+          {shapeOptions.map(({ value, icon: Icon }) => {
+            const label = t.shapes[value];
+            return (
+              <button
+                className={config.shape === value ? 'choice is-selected' : 'choice'}
+                key={value}
+                type="button"
+                onClick={() => setConfig({ shape: value })}
+                title={label}
+              >
+                <Icon size={17} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
       <section className="control-section">
         <div className="section-title">
           <SlidersHorizontal size={16} />
-          <h2>尺寸</h2>
+          <h2>{t.sections.dimensions}</h2>
         </div>
         {config.shape === 'circle' ? (
           <NumberField
-            label="直径"
+            label={t.fields.diameter}
             value={config.diameter}
             min={36}
             max={120}
@@ -141,139 +154,145 @@ export function ControlPanel() {
           />
         ) : (
           <>
-            <NumberField label="宽度" value={config.width} min={36} max={140} unit="mm" onChange={(width) => setConfig({ width })} />
-            <NumberField label="高度" value={config.height} min={36} max={140} unit="mm" onChange={(height) => setConfig({ height })} />
+            <NumberField label={t.fields.width} value={config.width} min={36} max={140} unit="mm" onChange={(width) => setConfig({ width })} />
+            <NumberField label={t.fields.height} value={config.height} min={36} max={140} unit="mm" onChange={(height) => setConfig({ height })} />
           </>
         )}
-        <NumberField label="厚度" value={config.thickness} min={2} max={14} step={0.5} unit="mm" onChange={(thickness) => setConfig({ thickness })} />
-        <NumberField label="边缘倒角" value={config.edgeBevel} min={0} max={4} step={0.1} unit="mm" onChange={(edgeBevel) => setConfig({ edgeBevel })} />
+        <NumberField label={t.fields.thickness} value={config.thickness} min={2} max={14} step={0.5} unit="mm" onChange={(thickness) => setConfig({ thickness })} />
+        <NumberField label={t.fields.edgeBevel} value={config.edgeBevel} min={0} max={4} step={0.1} unit="mm" onChange={(edgeBevel) => setConfig({ edgeBevel })} />
         {config.shape === 'rounded-rect' && (
-          <NumberField label="圆角" value={config.cornerRadius} min={0} max={24} unit="mm" onChange={(cornerRadius) => setConfig({ cornerRadius })} />
+          <NumberField label={t.fields.cornerRadius} value={config.cornerRadius} min={0} max={24} unit="mm" onChange={(cornerRadius) => setConfig({ cornerRadius })} />
         )}
         {config.shape === 'polygon' && (
-          <NumberField label="边数" value={config.polygonSides} min={3} max={12} onChange={(polygonSides) => setConfig({ polygonSides })} />
+          <NumberField label={t.fields.polygonSides} value={config.polygonSides} min={3} max={12} onChange={(polygonSides) => setConfig({ polygonSides })} />
         )}
-        <NumberField label="曲线精度" value={config.quality} min={48} max={240} step={4} onChange={(quality) => setConfig({ quality })} />
+        <NumberField label={t.fields.quality} value={config.quality} min={48} max={240} step={4} onChange={(quality) => setConfig({ quality })} />
       </section>
 
       <section className="control-section">
         <div className="section-title">
           <FileUp size={16} />
-          <h2>SVG 纹理</h2>
+          <h2>{t.sections.svg}</h2>
         </div>
         <input
           id="front-svg-upload"
           className="upload-input"
           type="file"
           accept=".svg,image/svg+xml"
-          aria-label="上传 SVG 图像"
+          aria-label={t.upload.frontAria}
           onChange={handleSvgUpload}
         />
-        <div className="upload-file-name">{svg ? svg.fileName : '未选择 SVG 文件'}</div>
+        <div className="upload-file-name">{svg ? svg.fileName : t.upload.noFront}</div>
         {svg && (
           <button className="text-button" type="button" onClick={() => setSvg(null)}>
-            移除 SVG
+            {t.upload.removeSvg}
           </button>
         )}
-        <NumberField label="浮雕深度" value={config.reliefDepth} min={0.2} max={4} step={0.1} unit="mm" onChange={(reliefDepth) => setConfig({ reliefDepth })} />
-        <NumberField label="缩放" value={config.reliefScale} min={20} max={110} unit="%" onChange={(reliefScale) => setConfig({ reliefScale })} />
-        <NumberField label="旋转" value={config.reliefRotation} min={-180} max={180} unit="deg" onChange={(reliefRotation) => setConfig({ reliefRotation })} />
-        <NumberField label="水平偏移" value={config.reliefOffsetX} min={-30} max={30} unit="mm" onChange={(reliefOffsetX) => setConfig({ reliefOffsetX })} />
-        <NumberField label="垂直偏移" value={config.reliefOffsetY} min={-30} max={30} unit="mm" onChange={(reliefOffsetY) => setConfig({ reliefOffsetY })} />
+        <NumberField label={t.fields.reliefDepth} value={config.reliefDepth} min={0.2} max={4} step={0.1} unit="mm" onChange={(reliefDepth) => setConfig({ reliefDepth })} />
+        <NumberField label={t.fields.scale} value={config.reliefScale} min={20} max={110} unit="%" onChange={(reliefScale) => setConfig({ reliefScale })} />
+        <NumberField label={t.fields.rotation} value={config.reliefRotation} min={-180} max={180} unit="deg" onChange={(reliefRotation) => setConfig({ reliefRotation })} />
+        <NumberField label={t.fields.offsetX} value={config.reliefOffsetX} min={-30} max={30} unit="mm" onChange={(reliefOffsetX) => setConfig({ reliefOffsetX })} />
+        <NumberField label={t.fields.offsetY} value={config.reliefOffsetY} min={-30} max={30} unit="mm" onChange={(reliefOffsetY) => setConfig({ reliefOffsetY })} />
         <label className="color-row">
-          <span>浮雕颜色</span>
+          <span>{t.fields.reliefColor}</span>
           <input type="color" value={config.reliefColor} onChange={(event) => setConfig({ reliefColor: event.currentTarget.value })} />
         </label>
-        <NumberField label="浮雕金属度" value={config.reliefMetalness} min={0} max={1} step={0.05} onChange={(reliefMetalness) => setConfig({ reliefMetalness })} />
-        <NumberField label="浮雕粗糙度" value={config.reliefRoughness} min={0.05} max={0.9} step={0.05} onChange={(reliefRoughness) => setConfig({ reliefRoughness })} />
+        <NumberField label={t.fields.reliefMetalness} value={config.reliefMetalness} min={0} max={1} step={0.05} onChange={(reliefMetalness) => setConfig({ reliefMetalness })} />
+        <NumberField label={t.fields.reliefRoughness} value={config.reliefRoughness} min={0} max={0.9} step={0.05} onChange={(reliefRoughness) => setConfig({ reliefRoughness })} />
       </section>
 
       <section className="control-section">
         <div className="section-title">
           <Type size={16} />
-          <h2>背面刻字</h2>
+          <h2>{t.sections.back}</h2>
         </div>
         <label className="text-field">
-          <span>文字</span>
+          <span>{t.fields.text}</span>
           <textarea
-            aria-label="背面文字"
+            aria-label={t.fields.text}
             rows={3}
-            placeholder={'EARNED BY TONY\nON 17 MAY 2026'}
+            placeholder={'EARNED BY TONY\nON 28 MAY 2026'}
             value={config.backText}
             onChange={(event) => setConfig({ backText: event.currentTarget.value.toUpperCase() })}
           />
         </label>
-        <NumberField label="文字大小" value={config.backTextSize} min={1.5} max={8} step={0.1} unit="mm" onChange={(backTextSize) => setConfig({ backTextSize })} />
-        <NumberField label="刻字高度" value={config.backMarkDepth} min={0.1} max={1.5} step={0.05} unit="mm" onChange={(backMarkDepth) => setConfig({ backMarkDepth })} />
-        <NumberField label="文字垂直位置" value={config.backTextOffsetY} min={-24} max={24} unit="mm" onChange={(backTextOffsetY) => setConfig({ backTextOffsetY })} />
+        <NumberField label={t.fields.textSize} value={config.backTextSize} min={1.5} max={8} step={0.1} unit="mm" onChange={(backTextSize) => setConfig({ backTextSize })} />
+        <NumberField label={t.fields.markHeight} value={config.backMarkDepth} min={0.1} max={1.5} step={0.05} unit="mm" onChange={(backMarkDepth) => setConfig({ backMarkDepth })} />
+        <NumberField label={t.fields.textOffsetY} value={config.backTextOffsetY} min={-24} max={24} unit="mm" onChange={(backTextOffsetY) => setConfig({ backTextOffsetY })} />
         <label className="toggle-row">
           <input
             type="checkbox"
             checked={config.backLogoEnabled}
             onChange={(event) => setConfig({ backLogoEnabled: event.currentTarget.checked })}
           />
-          <span>显示背面小 SVG</span>
+          <span>{t.fields.showBackSvg}</span>
         </label>
         <input
           id="back-svg-upload"
           className="upload-input"
           type="file"
           accept=".svg,image/svg+xml"
-          aria-label="上传背面 SVG"
+          aria-label={t.upload.backAria}
           onChange={handleBackSvgUpload}
         />
-        <div className="upload-file-name">{backSvg ? backSvg.fileName : '未选择背面 SVG'}</div>
+        <div className="upload-file-name">{backSvg ? backSvg.fileName : t.upload.noBack}</div>
         {backSvg && (
           <button className="text-button" type="button" onClick={() => setBackSvg(null)}>
-            移除背面 SVG
+            {t.upload.removeBackSvg}
           </button>
         )}
         <label className="color-row">
-          <span>刻字颜色</span>
+          <span>{t.fields.markColor}</span>
           <input type="color" value={config.backMarkColor} onChange={(event) => setConfig({ backMarkColor: event.currentTarget.value })} />
         </label>
-        <NumberField label="SVG 宽度" value={config.backLogoWidth} min={3} max={24} step={0.5} unit="mm" onChange={(backLogoWidth) => setConfig({ backLogoWidth })} />
-        <NumberField label="SVG 垂直位置" value={config.backLogoOffsetY} min={-28} max={16} unit="mm" onChange={(backLogoOffsetY) => setConfig({ backLogoOffsetY })} />
+        <NumberField label={t.fields.markMetalness} value={config.backMarkMetalness} min={0} max={1} step={0.05} onChange={(backMarkMetalness) => setConfig({ backMarkMetalness })} />
+        <NumberField label={t.fields.markRoughness} value={config.backMarkRoughness} min={0} max={0.9} step={0.05} onChange={(backMarkRoughness) => setConfig({ backMarkRoughness })} />
+        <NumberField label={t.fields.svgWidth} value={config.backLogoWidth} min={3} max={24} step={0.5} unit="mm" onChange={(backLogoWidth) => setConfig({ backLogoWidth })} />
+        <NumberField label={t.fields.svgOffsetY} value={config.backLogoOffsetY} min={-28} max={16} unit="mm" onChange={(backLogoOffsetY) => setConfig({ backLogoOffsetY })} />
       </section>
 
       <section className="control-section">
         <div className="section-title">
           <Palette size={16} />
-          <h2>材质</h2>
+          <h2>{t.sections.material}</h2>
         </div>
         <div className="material-grid">
-          {Object.entries(materialPresets).map(([key, preset]) => (
-            <button
-              className={config.materialPreset === key ? 'material-choice is-selected' : 'material-choice'}
-              key={key}
-              type="button"
-              onClick={() => setMaterialPreset(key as keyof typeof materialPresets)}
-              title={preset.label}
-            >
-              <span className="swatch" style={{ backgroundColor: preset.color }} />
-              {preset.label}
-            </button>
-          ))}
+          {Object.entries(materialPresets).map(([key, preset]) => {
+            const materialKey = key as Exclude<MaterialPreset, 'custom'>;
+            const label = t.materials[materialKey];
+            return (
+              <button
+                className={config.materialPreset === key ? 'material-choice is-selected' : 'material-choice'}
+                key={key}
+                type="button"
+                onClick={() => setMaterialPreset(key as keyof typeof materialPresets)}
+                title={label}
+              >
+                <span className="swatch" style={{ backgroundColor: preset.color }} />
+                {label}
+              </button>
+            );
+          })}
           <button
             className={config.materialPreset === 'custom' ? 'material-choice is-selected' : 'material-choice'}
             type="button"
             onClick={() => setMaterialPreset('custom')}
           >
             <span className="swatch custom-swatch" />
-            自定义
+            {t.materials.custom}
           </button>
         </div>
         <label className="color-row">
-          <span>颜色</span>
+          <span>{t.fields.baseColor}</span>
           <input type="color" value={config.color} onChange={(event) => setConfig({ color: event.currentTarget.value, materialPreset: 'custom' })} />
         </label>
-        <NumberField label="金属度" value={config.metalness} min={0} max={1} step={0.05} onChange={(metalness) => setConfig({ metalness, materialPreset: 'custom' })} />
-        <NumberField label="粗糙度" value={config.roughness} min={0.05} max={0.9} step={0.05} onChange={(roughness) => setConfig({ roughness, materialPreset: 'custom' })} />
+        <NumberField label={t.fields.baseMetalness} value={config.metalness} min={0} max={1} step={0.05} onChange={(metalness) => setConfig({ metalness, materialPreset: 'custom' })} />
+        <NumberField label={t.fields.baseRoughness} value={config.roughness} min={0.05} max={0.9} step={0.05} onChange={(roughness) => setConfig({ roughness, materialPreset: 'custom' })} />
       </section>
 
       <button className="reset-button" type="button" onClick={reset}>
         <RotateCcw size={16} />
-        重置参数
+        {t.reset}
       </button>
     </aside>
   );

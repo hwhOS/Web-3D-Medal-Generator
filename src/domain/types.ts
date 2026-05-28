@@ -34,6 +34,8 @@ export interface MedalConfig {
   backLogoWidth: number;
   backLogoOffsetY: number;
   backMarkColor: string;
+  backMarkMetalness: number;
+  backMarkRoughness: number;
 }
 
 export interface SvgReliefInput {

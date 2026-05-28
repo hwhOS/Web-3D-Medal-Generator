@@ -2,26 +2,30 @@ import { Download, FileArchive, FileBox, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import { createExportBlob, downloadBlob, exportFileName } from '../export/exporters';
 import type { BuildStatus, ExportFormat, MedalConfig, ModelBuffers } from '../domain/types';
+import { copy, type Language } from '../i18n';
 
-const exportOptions: Array<{ format: ExportFormat; label: string; detail: string; icon: typeof FileBox }> = [
-  { format: 'stl', label: 'STL', detail: '3D 打印，毫米单位', icon: FileBox },
-  { format: 'glb', label: 'GLB', detail: '保留材质，米单位', icon: FileArchive },
-  { format: 'usdz', label: 'USDZ', detail: 'Apple Quick Look / AR', icon: Smartphone }
+const exportOptions: Array<{ format: ExportFormat; label: string; icon: typeof FileBox }> = [
+  { format: 'stl', label: 'STL', icon: FileBox },
+  { format: 'glb', label: 'GLB', icon: FileArchive },
+  { format: 'usdz', label: 'USDZ', icon: Smartphone }
 ];
 
 export function ExportPanel({
   status,
   model,
   config,
-  error
+  error,
+  language
 }: {
   status: BuildStatus;
   model: ModelBuffers | null;
   config: MedalConfig;
   error: string | null;
+  language: Language;
 }) {
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const disabled = !model || status === 'generating' || Boolean(exporting);
+  const t = copy[language].exportPanel;
 
   const handleExport = async (format: ExportFormat) => {
     if (!model) {
@@ -38,28 +42,28 @@ export function ExportPanel({
   };
 
   return (
-    <section className="export-panel" aria-label="导出模型">
+    <section className="export-panel" aria-label={t.aria}>
       <div className="status-row">
         <span className={`status-dot ${status}`} />
-        <span>{status === 'generating' ? '正在生成模型' : status === 'ready' ? '模型已就绪' : status === 'error' ? '生成失败' : '等待生成'}</span>
+        <span>{t.status[status]}</span>
       </div>
 
       {model && (
         <div className="stats-grid">
           <div>
-            <span>三角面</span>
+            <span>{t.stats.triangles}</span>
             <strong>{model.triangleCount.toLocaleString()}</strong>
           </div>
           <div>
-            <span>顶点</span>
+            <span>{t.stats.vertices}</span>
             <strong>{model.vertexCount.toLocaleString()}</strong>
           </div>
           <div>
-            <span>体积</span>
+            <span>{t.stats.volume}</span>
             <strong>{model.volume.toFixed(1)} mm³</strong>
           </div>
           <div>
-            <span>表面积</span>
+            <span>{t.stats.surfaceArea}</span>
             <strong>{model.surfaceArea.toFixed(1)} mm²</strong>
           </div>
         </div>
@@ -76,19 +80,19 @@ export function ExportPanel({
       ) : null}
 
       <div className="export-buttons">
-        {exportOptions.map(({ format, label, detail, icon: Icon }) => (
-          <button key={format} type="button" disabled={disabled} onClick={() => handleExport(format)} title={detail}>
+        {exportOptions.map(({ format, label, icon: Icon }) => (
+          <button key={format} type="button" disabled={disabled} onClick={() => handleExport(format)} title={t.details[format]}>
             <Icon size={18} />
             <span>
-              {exporting === format ? '导出中' : label}
-              <small>{detail}</small>
+              {exporting === format ? t.exporting : label}
+              <small>{t.details[format]}</small>
             </span>
             <Download size={15} />
           </button>
         ))}
       </div>
 
-      <p className="format-note">STL 不保存颜色或材质；GLB/USDZ 会保留当前金属材质设置。</p>
+      <p className="format-note">{t.note}</p>
     </section>
   );
 }

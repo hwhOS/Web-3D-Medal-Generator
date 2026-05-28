@@ -21,8 +21,9 @@ describe('buildMedalModel', () => {
   });
 
   it('adds raised SVG relief as a separate model section', async () => {
-    const base = await buildMedalModel(defaultConfig, null);
-    const raised = await buildMedalModel(defaultConfig, svg);
+    const config = { ...defaultConfig, backText: '' };
+    const base = await buildMedalModel(config, null);
+    const raised = await buildMedalModel(config, svg);
 
     expect(raised.volume).toBeGreaterThan(base.volume);
     expect(raised.reliefIndexStart).toBeGreaterThan(0);
@@ -30,7 +31,7 @@ describe('buildMedalModel', () => {
   });
 
   it('adds raised back text and optional back SVG below it', async () => {
-    const base = await buildMedalModel(defaultConfig, null);
+    const base = await buildMedalModel({ ...defaultConfig, backText: '' }, null);
     const marked = await buildMedalModel(
       {
         ...defaultConfig,
