@@ -7,7 +7,8 @@ import { useMedalStore } from './store/useMedalStore';
 export function App() {
   const config = useMedalStore((state) => state.config);
   const svg = useMedalStore((state) => state.svg);
-  const { status, model, error } = useMedalModel(config, svg);
+  const backSvg = useMedalStore((state) => state.backSvg);
+  const { status, model, error } = useMedalModel(config, svg, backSvg);
 
   return (
     <main className="app-shell">

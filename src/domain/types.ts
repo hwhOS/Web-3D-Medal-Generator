@@ -26,6 +26,13 @@ export interface MedalConfig {
   reliefRotation: number;
   reliefOffsetX: number;
   reliefOffsetY: number;
+  backText: string;
+  backTextSize: number;
+  backMarkDepth: number;
+  backTextOffsetY: number;
+  backLogoEnabled: boolean;
+  backLogoWidth: number;
+  backLogoOffsetY: number;
 }
 
 export interface SvgReliefInput {
@@ -58,6 +65,7 @@ export interface WorkerBuildRequest {
   id: number;
   config: MedalConfig;
   svg: SvgReliefGeometry | null;
+  backSvg: SvgReliefGeometry | null;
 }
 
 export type WorkerBuildResponse =

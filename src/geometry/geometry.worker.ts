@@ -4,11 +4,11 @@ import type { WorkerBuildRequest, WorkerBuildResponse } from '../domain/types';
 const ctx: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
 
 ctx.onmessage = async (event: MessageEvent<WorkerBuildRequest>) => {
-  const { id, config, svg } = event.data;
+  const { id, config, svg, backSvg } = event.data;
 
   try {
     const { buildMedalModel } = await import('./medalBuilder');
-    const model = await buildMedalModel(config, svg, wasmUrl);
+    const model = await buildMedalModel(config, svg, backSvg, wasmUrl);
     const response: WorkerBuildResponse = {
       id,
       ok: true,

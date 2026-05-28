@@ -6,15 +6,18 @@ import type { MaterialPreset, MedalConfig, SvgReliefInput } from '../domain/type
 interface MedalState {
   config: MedalConfig;
   svg: SvgReliefInput | null;
+  backSvg: SvgReliefInput | null;
   setConfig: (patch: Partial<MedalConfig>) => void;
   setMaterialPreset: (preset: MaterialPreset) => void;
   setSvg: (svg: SvgReliefInput | null) => void;
+  setBackSvg: (svg: SvgReliefInput | null) => void;
   reset: () => void;
 }
 
 export const useMedalStore = create<MedalState>((set) => ({
   config: defaultConfig,
   svg: null,
+  backSvg: null,
   setConfig: (patch) =>
     set((state) => ({
       config: {
@@ -44,9 +47,11 @@ export const useMedalStore = create<MedalState>((set) => ({
       };
     }),
   setSvg: (svg) => set({ svg }),
+  setBackSvg: (backSvg) => set({ backSvg }),
   reset: () =>
     set({
       config: defaultConfig,
-      svg: null
+      svg: null,
+      backSvg: null
     })
 }));

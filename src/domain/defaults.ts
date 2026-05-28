@@ -19,5 +19,12 @@ export const defaultConfig: MedalConfig = {
   reliefScale: 52,
   reliefRotation: 0,
   reliefOffsetX: 0,
-  reliefOffsetY: 0
+  reliefOffsetY: 0,
+  backText: '',
+  backTextSize: 3.2,
+  backMarkDepth: 0.35,
+  backTextOffsetY: 5,
+  backLogoEnabled: true,
+  backLogoWidth: 8,
+  backLogoOffsetY: -7
 };

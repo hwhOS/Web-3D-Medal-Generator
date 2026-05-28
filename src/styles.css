@@ -19,7 +19,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -155,6 +156,39 @@ button:disabled {
 
 .field input[type='range'] {
   width: 100%;
+  accent-color: #b9872a;
+}
+
+.text-field {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  color: #514d46;
+  font-size: 13px;
+}
+
+.text-field textarea {
+  width: 100%;
+  min-height: 78px;
+  resize: vertical;
+  border: 1px solid #d5cbbb;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #fffefa;
+  color: #2c2a26;
+  line-height: 1.35;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  color: #514d46;
+  font-size: 13px;
+}
+
+.toggle-row input {
   accent-color: #b9872a;
 }
 

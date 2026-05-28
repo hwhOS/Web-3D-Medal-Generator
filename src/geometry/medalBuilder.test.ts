@@ -28,4 +28,19 @@ describe('buildMedalModel', () => {
     expect(raised.volume).toBeGreaterThan(base.volume);
     expect(engraved.volume).toBeLessThan(base.volume);
   });
+
+  it('adds raised back text and optional back SVG below it', async () => {
+    const base = await buildMedalModel(defaultConfig, null);
+    const marked = await buildMedalModel(
+      {
+        ...defaultConfig,
+        backText: 'EARNED BY TONY\nON 17 MAY 2026'
+      },
+      null,
+      svg
+    );
+
+    expect(marked.triangleCount).toBeGreaterThan(base.triangleCount);
+    expect(marked.bounds.min[2]).toBeLessThan(base.bounds.min[2]);
+  });
 });

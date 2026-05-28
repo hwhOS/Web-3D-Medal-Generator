@@ -8,7 +8,8 @@ import {
   RotateCcw,
   Shield,
   SlidersHorizontal,
-  SquareRoundCorner
+  SquareRoundCorner,
+  Type
 } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 import { materialPresets } from '../domain/materials';
@@ -62,20 +63,34 @@ function NumberField({
 }
 
 export function ControlPanel() {
-  const { config, svg, setConfig, setMaterialPreset, setSvg, reset } = useMedalStore();
+  const { config, svg, backSvg, setConfig, setMaterialPreset, setSvg, setBackSvg, reset } = useMedalStore();
 
-  const handleSvgUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+  const readSvgUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
     if (!file) {
-      return;
+      return null;
     }
 
     const text = await file.text();
-    setSvg({
+    event.currentTarget.value = '';
+    return {
       text,
       fileName: file.name
-    });
-    event.currentTarget.value = '';
+    };
+  };
+
+  const handleSvgUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const nextSvg = await readSvgUpload(event);
+    if (nextSvg) {
+      setSvg(nextSvg);
+    }
+  };
+
+  const handleBackSvgUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const nextSvg = await readSvgUpload(event);
+    if (nextSvg) {
+      setBackSvg(nextSvg);
+    }
   };
 
   return (
@@ -176,6 +191,46 @@ export function ControlPanel() {
         <NumberField label="旋转" value={config.reliefRotation} min={-180} max={180} unit="deg" onChange={(reliefRotation) => setConfig({ reliefRotation })} />
         <NumberField label="水平偏移" value={config.reliefOffsetX} min={-30} max={30} unit="mm" onChange={(reliefOffsetX) => setConfig({ reliefOffsetX })} />
         <NumberField label="垂直偏移" value={config.reliefOffsetY} min={-30} max={30} unit="mm" onChange={(reliefOffsetY) => setConfig({ reliefOffsetY })} />
+      </section>
+
+      <section className="control-section">
+        <div className="section-title">
+          <Type size={16} />
+          <h2>背面刻字</h2>
+        </div>
+        <label className="text-field">
+          <span>文字</span>
+          <textarea
+            aria-label="背面文字"
+            rows={3}
+            placeholder={'EARNED BY TONY\nON 17 MAY 2026'}
+            value={config.backText}
+            onChange={(event) => setConfig({ backText: event.currentTarget.value.toUpperCase() })}
+          />
+        </label>
+        <NumberField label="文字大小" value={config.backTextSize} min={1.5} max={8} step={0.1} unit="mm" onChange={(backTextSize) => setConfig({ backTextSize })} />
+        <NumberField label="刻字高度" value={config.backMarkDepth} min={0.1} max={1.5} step={0.05} unit="mm" onChange={(backMarkDepth) => setConfig({ backMarkDepth })} />
+        <NumberField label="文字垂直位置" value={config.backTextOffsetY} min={-24} max={24} unit="mm" onChange={(backTextOffsetY) => setConfig({ backTextOffsetY })} />
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={config.backLogoEnabled}
+            onChange={(event) => setConfig({ backLogoEnabled: event.currentTarget.checked })}
+          />
+          <span>显示背面小 SVG</span>
+        </label>
+        <label className="upload-box">
+          <FileUp size={18} />
+          <span>{backSvg ? backSvg.fileName : '上传背面 SVG'}</span>
+          <input type="file" accept=".svg,image/svg+xml" onChange={handleBackSvgUpload} />
+        </label>
+        {backSvg && (
+          <button className="text-button" type="button" onClick={() => setBackSvg(null)}>
+            移除背面 SVG
+          </button>
+        )}
+        <NumberField label="SVG 宽度" value={config.backLogoWidth} min={3} max={24} step={0.5} unit="mm" onChange={(backLogoWidth) => setConfig({ backLogoWidth })} />
+        <NumberField label="SVG 垂直位置" value={config.backLogoOffsetY} min={-28} max={16} unit="mm" onChange={(backLogoOffsetY) => setConfig({ backLogoOffsetY })} />
       </section>
 
       <section className="control-section">

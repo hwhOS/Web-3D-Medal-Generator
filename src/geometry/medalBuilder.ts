@@ -1,4 +1,8 @@
 import Module, { type ManifoldToplevel } from 'manifold-3d';
+import { BufferGeometry, Vector3 } from 'three';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import fontJson from 'three/examples/fonts/helvetiker_bold.typeface.json';
 import type { MedalConfig, ModelBuffers, SvgReliefGeometry } from '../domain/types';
 import {
   bounds2,
@@ -175,6 +179,40 @@ function triangulatedArea(polygons: Point2[][], api: ManifoldApi): number {
 }
 
 function addEngravingWalls(mesh: LayeredMesh, contours: Point2[][], topZ: number, floorZ: number): void {
+  addEngravingWallPairs(mesh, contours, contours, topZ, floorZ);
+}
+
+function addEngravingWallPairs(mesh: LayeredMesh, topContours: Point2[][], floorContours: Point2[][], topZ: number, floorZ: number): void {
+  const count = Math.min(topContours.length, floorContours.length);
+  for (let contourIndex = 0; contourIndex < count; contourIndex += 1) {
+    const contour = topContours[contourIndex];
+    const floorContour = floorContours[contourIndex];
+    if (contour.length !== floorContour.length) {
+      continue;
+    }
+    const isCounterClockwise = polygonArea(contour) > 0;
+    for (let i = 0; i < contour.length; i += 1) {
+      const a = contour[i];
+      const b = contour[(i + 1) % contour.length];
+      const floorA2 = floorContour[i];
+      const floorB2 = floorContour[(i + 1) % floorContour.length];
+      const topA: Point3 = [a[0], a[1], topZ];
+      const topB: Point3 = [b[0], b[1], topZ];
+      const floorA: Point3 = [floorA2[0], floorA2[1], floorZ];
+      const floorB: Point3 = [floorB2[0], floorB2[1], floorZ];
+
+      if (isCounterClockwise) {
+        addTriangle(mesh, topA, topB, floorB);
+        addTriangle(mesh, topA, floorB, floorA);
+      } else {
+        addTriangle(mesh, topA, floorB, topB);
+        addTriangle(mesh, topA, floorA, floorB);
+      }
+    }
+  }
+}
+
+function addVerticalEngravingWalls(mesh: LayeredMesh, contours: Point2[][], topZ: number, floorZ: number): void {
   for (const contour of contours) {
     const isCounterClockwise = polygonArea(contour) > 0;
     for (let i = 0; i < contour.length; i += 1) {
@@ -200,11 +238,25 @@ function engravingDepth(config: MedalConfig): number {
   return Math.min(Math.max(0.1, config.reliefDepth), config.thickness * 0.72);
 }
 
+function scaledContourAroundCenter(contour: Point2[], scale: number): Point2[] {
+  const center = contour.reduce<Point2>((sum, [x, y]) => [sum[0] + x, sum[1] + y], [0, 0]);
+  center[0] /= contour.length;
+  center[1] /= contour.length;
+
+  return contour.map(([x, y]) => [center[0] + (x - center[0]) * scale, center[1] + (y - center[1]) * scale]);
+}
+
+function beveledEngravingFloor(contours: Point2[][], config: MedalConfig): Point2[][] {
+  const scale = Math.max(0.86, 1 - engravingDepth(config) * 0.22);
+  return contours.map((contour) => scaledContourAroundCenter(contour, scale));
+}
+
 function buildLayeredEngravedMesh(
   outline: Point2[],
   topRing: Point2[],
   topFacePolygons: Point2[][],
   engravingPolygons: Point2[][],
+  floorPolygons: Point2[][],
   config: MedalConfig,
   api: ManifoldApi
 ): LayeredMesh {
@@ -214,8 +266,9 @@ function buildLayeredEngravedMesh(
   const topFace = topFacePolygons.length ? topFacePolygons : [topRing];
 
   addTriangulatedSurface(mesh, topFace, topZ, 'up', api);
-  addTriangulatedSurface(mesh, engravingPolygons, floorZ, 'up', api);
-  addEngravingWalls(mesh, engravingPolygons, topZ, floorZ);
+  addTriangulatedSurface(mesh, floorPolygons, floorZ, 'up', api);
+  addEngravingWallPairs(mesh, engravingPolygons, floorPolygons, topZ, floorZ);
+  addVerticalEngravingWalls(mesh, engravingPolygons.filter((_, index) => engravingPolygons[index].length !== floorPolygons[index]?.length), topZ, floorZ);
 
   return mesh;
 }
@@ -424,6 +477,251 @@ function cleanedPolygons(polygons: Point2[][]): Point2[][] {
   return polygons.map((polygon) => cleanPolygon(polygon, 0.00001)).filter((polygon) => polygon.length >= 3);
 }
 
+function meshFromManifold(manifold: ManifoldInstance): LayeredMesh {
+  const mesh = manifold.getMesh();
+  const positions: number[] = [];
+  const indices: number[] = [];
+
+  for (let vertex = 0; vertex < mesh.numVert; vertex += 1) {
+    const sourceOffset = vertex * mesh.numProp;
+    positions.push(mesh.vertProperties[sourceOffset], mesh.vertProperties[sourceOffset + 1], mesh.vertProperties[sourceOffset + 2]);
+  }
+
+  for (const index of mesh.triVerts) {
+    indices.push(index);
+  }
+
+  return { positions, indices };
+}
+
+function appendMeshToModel(model: ModelBuffers, mesh: LayeredMesh): ModelBuffers {
+  if (mesh.positions.length === 0 || mesh.indices.length === 0) {
+    return model;
+  }
+
+  const meshModel = meshDataToBuffers(mesh, []);
+  const vertexOffset = model.positions.length / 3;
+  const positions = new Float32Array(model.positions.length + meshModel.positions.length);
+  const indices = new Uint32Array(model.indices.length + meshModel.indices.length);
+
+  positions.set(model.positions);
+  positions.set(meshModel.positions, model.positions.length);
+  indices.set(model.indices);
+  for (let i = 0; i < meshModel.indices.length; i += 1) {
+    indices[model.indices.length + i] = meshModel.indices[i] + vertexOffset;
+  }
+
+  return {
+    positions,
+    indices,
+    vertexCount: positions.length / 3,
+    triangleCount: indices.length / 3,
+    volume: model.volume + meshModel.volume,
+    surfaceArea: model.surfaceArea + meshModel.surfaceArea,
+    bounds: {
+      min: [
+        Math.min(model.bounds.min[0], meshModel.bounds.min[0]),
+        Math.min(model.bounds.min[1], meshModel.bounds.min[1]),
+        Math.min(model.bounds.min[2], meshModel.bounds.min[2])
+      ],
+      max: [
+        Math.max(model.bounds.max[0], meshModel.bounds.max[0]),
+        Math.max(model.bounds.max[1], meshModel.bounds.max[1]),
+        Math.max(model.bounds.max[2], meshModel.bounds.max[2])
+      ]
+    },
+    warnings: model.warnings,
+    generatedAt: Date.now()
+  };
+}
+
+function normalizeBackSvgPolygons(svg: SvgReliefGeometry, config: MedalConfig): Point2[][] {
+  const bounds = bounds2(svg.polygons);
+  if (!bounds) {
+    return [];
+  }
+
+  const sourceWidth = bounds.max[0] - bounds.min[0];
+  const sourceHeight = bounds.max[1] - bounds.min[1];
+  if (sourceWidth <= 0 || sourceHeight <= 0) {
+    return [];
+  }
+
+  const scale = config.backLogoWidth / sourceWidth;
+  const centerX = (bounds.min[0] + bounds.max[0]) / 2;
+  const centerY = (bounds.min[1] + bounds.max[1]) / 2;
+
+  return svg.polygons
+    .map((polygon) =>
+      cleanPolygon(
+        polygon.map(([x, y]) => [(x - centerX) * scale, (y - centerY) * scale + config.backLogoOffsetY])
+      )
+    )
+    .filter((polygon) => polygon.length >= 3);
+}
+
+function makeBackSvgMesh(
+  svg: SvgReliefGeometry | null,
+  config: MedalConfig,
+  profile: BaseProfile,
+  warnings: string[],
+  api: ManifoldApi
+): LayeredMesh | null {
+  if (!svg || !config.backLogoEnabled) {
+    return null;
+  }
+
+  warnings.push(...svg.warnings);
+  const normalized = normalizeBackSvgPolygons(svg, config);
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  const relief = api.CrossSection.ofPolygons(normalized, 'EvenOdd').simplify(0.03);
+  const backClip = api.CrossSection.ofPolygons([profile.topOutline], 'Positive');
+  const clipped = relief.intersect(backClip).simplify(0.02);
+  relief.delete();
+  backClip.delete();
+
+  if (clipped.isEmpty()) {
+    clipped.delete();
+    warnings.push('背面 SVG 与奖牌背面没有重叠。');
+    return null;
+  }
+
+  const depth = Math.min(Math.max(0.05, config.backMarkDepth), config.thickness * 0.28);
+  const contactInset = 0.035;
+  const bevelScale = Math.max(0.94, 1 - depth * 0.08);
+  const solid = clipped
+    .extrude(depth + contactInset, 1, 0, [bevelScale, bevelScale], false)
+    .scale([1, 1, -1])
+    .translate([0, 0, -config.thickness / 2 + contactInset]);
+  const mesh = meshFromManifold(solid);
+
+  clipped.delete();
+  solid.delete();
+
+  return mesh;
+}
+
+let cachedFont: ReturnType<FontLoader['parse']> | null = null;
+
+function getTextFont(): ReturnType<FontLoader['parse']> {
+  cachedFont ??= new FontLoader().parse(fontJson);
+  return cachedFont;
+}
+
+function appendTransformedGeometry(mesh: LayeredMesh, geometry: BufferGeometry, transform: (point: Vector3) => Point3): void {
+  const position = geometry.getAttribute('position');
+  if (!position) {
+    return;
+  }
+
+  const index = geometry.getIndex();
+  const vertexOffset = mesh.positions.length / 3;
+  const transformed: Point3[] = [];
+
+  for (let i = 0; i < position.count; i += 1) {
+    transformed.push(transform(new Vector3(position.getX(i), position.getY(i), position.getZ(i))));
+  }
+
+  for (const point of transformed) {
+    mesh.positions.push(point[0], point[1], point[2]);
+  }
+
+  if (index) {
+    for (let i = 0; i < index.count; i += 1) {
+      mesh.indices.push(vertexOffset + index.getX(i));
+    }
+  } else {
+    for (let i = 0; i < transformed.length; i += 1) {
+      mesh.indices.push(vertexOffset + i);
+    }
+  }
+}
+
+function makeBackTextMesh(config: MedalConfig, profile: BaseProfile): LayeredMesh | null {
+  const lines = config.backText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 4);
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  const font = getTextFont();
+  const depth = Math.min(Math.max(0.05, config.backMarkDepth), config.thickness * 0.28);
+  const contactInset = 0.035;
+  const textDepth = depth + contactInset;
+  const size = Math.max(0.8, config.backTextSize);
+  const lineGap = size * 1.32;
+  const geometries = lines.map(
+    (line) =>
+      new TextGeometry(line, {
+        font,
+        size,
+        depth: textDepth,
+        curveSegments: 3,
+        bevelEnabled: false
+      })
+  );
+
+  const widths = geometries.map((geometry) => {
+    geometry.computeBoundingBox();
+    return (geometry.boundingBox?.max.x ?? 0) - (geometry.boundingBox?.min.x ?? 0);
+  });
+  const maxWidth = Math.max(...widths, 1);
+  const maxAllowedWidth = Math.min(profile.footprint.width, profile.footprint.height) * 0.64;
+  const fitScale = Math.min(1, maxAllowedWidth / maxWidth);
+  const mesh: LayeredMesh = { positions: [], indices: [] };
+  const backZ = -config.thickness / 2;
+  const totalHeight = (lines.length - 1) * lineGap * fitScale + size * fitScale;
+
+  geometries.forEach((geometry, lineIndex) => {
+    const bounds = geometry.boundingBox;
+    const width = widths[lineIndex];
+    const minX = bounds?.min.x ?? 0;
+    const minY = bounds?.min.y ?? 0;
+    const lineY = config.backTextOffsetY + totalHeight / 2 - size * fitScale - lineIndex * lineGap * fitScale;
+
+    appendTransformedGeometry(mesh, geometry, (point) => [
+      (point.x - minX - width / 2) * fitScale,
+      (point.y - minY) * fitScale + lineY,
+      backZ + contactInset - point.z
+    ]);
+    geometry.dispose();
+  });
+
+  return mesh;
+}
+
+function applyBackMarks(
+  model: ModelBuffers,
+  profile: BaseProfile,
+  config: MedalConfig,
+  backSvg: SvgReliefGeometry | null,
+  warnings: string[],
+  api: ManifoldApi
+): ModelBuffers {
+  let nextModel = model;
+  const textMesh = makeBackTextMesh(config, profile);
+  if (textMesh) {
+    nextModel = appendMeshToModel(nextModel, textMesh);
+  }
+
+  const backSvgMesh = makeBackSvgMesh(backSvg, config, profile, warnings, api);
+  if (backSvgMesh) {
+    nextModel = appendMeshToModel(nextModel, backSvgMesh);
+  }
+
+  return {
+    ...nextModel,
+    warnings
+  };
+}
+
 function makeEngravedBuffers(
   profile: BaseProfile,
   crossSection: CrossSectionInstance,
@@ -455,12 +753,18 @@ function makeEngravedBuffers(
 
   const removedVolume = triangulatedArea(engravingPolygons, api) * engravingDepth(config);
   const volume = Math.max(0, baseVolume - removedVolume);
-  const mesh = buildLayeredEngravedMesh(profile.outline, profile.topRing, topFacePolygons, engravingPolygons, config, api);
+  const floorPolygons = beveledEngravingFloor(engravingPolygons, config);
+  const mesh = buildLayeredEngravedMesh(profile.outline, profile.topRing, topFacePolygons, engravingPolygons, floorPolygons, config, api);
 
   return meshDataToBuffers(mesh, warnings, volume);
 }
 
-export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometry | null, wasmUrl?: string): Promise<ModelBuffers> {
+export async function buildMedalModel(
+  config: MedalConfig,
+  svg: SvgReliefGeometry | null,
+  backSvg: SvgReliefGeometry | null = null,
+  wasmUrl?: string
+): Promise<ModelBuffers> {
   const api = await getManifoldApi(wasmUrl);
   const warnings: string[] = [];
   const { solid: baseSolid, ...profile } = makeBase(config, api);
@@ -486,19 +790,22 @@ export async function buildMedalModel(config: MedalConfig, svg: SvgReliefGeometr
       }
     }
 
+    let model: ModelBuffers;
+
     if (engravedModel) {
-      return engravedModel;
-    }
-
-    const outputSolids = result === baseSolid && raisedRelief ? [baseSolid, raisedRelief] : [result];
-    for (const solid of outputSolids) {
-      const status = solid.status();
-      if (status !== 'NoError') {
-        throw new Error(`Manifold status: ${status}`);
+      model = engravedModel;
+    } else {
+      const outputSolids = result === baseSolid && raisedRelief ? [baseSolid, raisedRelief] : [result];
+      for (const solid of outputSolids) {
+        const status = solid.status();
+        if (status !== 'NoError') {
+          throw new Error(`Manifold status: ${status}`);
+        }
       }
+      model = meshToBuffers(outputSolids, warnings);
     }
 
-    return meshToBuffers(outputSolids, warnings);
+    return applyBackMarks(model, profile, config, backSvg, warnings, api);
   } finally {
     if (raisedRelief) {
       raisedRelief.delete();
